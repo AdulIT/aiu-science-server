@@ -11,6 +11,8 @@ const fs = require('fs');
 
 dotenv.config();
 const { User } = require('./models');
+const Publication = require('./models/Publication');
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,20 +23,6 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB successfully'))
   .catch((error) => console.error('MongoDB connection error:', error));
-
-// const userSchema = new mongoose.Schema({
-//   iin: {
-//     type: String,
-//     required: true,
-//     unique: true,
-//   },
-//   password: {
-//     type: String,
-//     required: true,
-//   },
-// });
-
-// const User = mongoose.model('User', userSchema);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -58,16 +46,13 @@ app.post('/api/auth/register', async (req, res) => {
   const { iin, password } = req.body;
 
   try {
-    // Check if the user already exists
     const existingUser = await User.findOne({ iin });
     if (existingUser) {
       return res.status(400).json({ message: 'User with this IIN already registered' });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
     const newUser = new User({ iin, password: hashedPassword });
     await newUser.save();
 
@@ -82,23 +67,19 @@ app.post('/api/auth/login', async (req, res) => {
   const { iin, password } = req.body;
 
   try {
-    // Find user by IIN
     const user = await User.findOne({ iin });
     if (!user) {
       return res.status(401).json({ success: false, message: 'User not found' });
     }
 
-    // Compare password with stored hash
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
 
-    // Generate JWT token
     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
     const token = jwt.sign({ iin: user.iin }, secretKey, { expiresIn: '1h' });
 
-    // Return token
     res.status(200).json({ success: true, token });
   } catch (error) {
     console.error('Error during user login:', error);
@@ -106,7 +87,6 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Обновление информации о пользователе
 app.put('/api/user/update', async (req, res) => {
   console.log('Запрос на обновление информации получен');
 
@@ -222,6 +202,62 @@ app.get('/api/user/profile', async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     console.error('Ошибка при получении данных пользователя:', error);
+    res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
+  }
+});
+
+app.get('/api/user/publications', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+    const decoded = jwt.verify(token, secretKey);
+    const iin = decoded.iin;
+
+    const publications = await Publication.find({ iin });
+    res.status(200).json(publications);
+  } catch (error) {
+    console.error('Ошибка при получении публикаций:', error);
+    res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
+  }
+});
+
+// Добавление новой публикации
+app.post('/api/user/publications', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+    const decoded = jwt.verify(token, secretKey);
+    const iin = decoded.iin;
+
+    const { authors, title, year, output, doi, percentile } = req.body;
+
+    const newPublication = new Publication({
+      iin,
+      authors,
+      title,
+      year,
+      output,
+      doi,
+      percentile,
+    });
+
+    await newPublication.save();
+
+    res.status(201).json(newPublication);
+  } catch (error) {
+    console.error('Ошибка при добавлении публикации:', error);
     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
   }
 });
