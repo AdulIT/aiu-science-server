@@ -5,7 +5,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
 dotenv.config();
+const { User } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,19 +22,37 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB successfully'))
   .catch((error) => console.error('MongoDB connection error:', error));
 
-const userSchema = new mongoose.Schema({
-  iin: {
-    type: String,
-    required: true,
-    unique: true,
+// const userSchema = new mongoose.Schema({
+//   iin: {
+//     type: String,
+//     required: true,
+//     unique: true,
+//   },
+//   password: {
+//     type: String,
+//     required: true,
+//   },
+// });
+
+// const User = mongoose.model('User', userSchema);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, 'public/uploads');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
   },
-  password: {
-    type: String,
-    required: true,
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
   },
 });
 
-const User = mongoose.model('User', userSchema);
+const upload = multer({ storage });
+
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 app.post('/api/auth/register', async (req, res) => {
   const { iin, password } = req.body;
@@ -80,6 +103,126 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     console.error('Error during user login:', error);
     res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+});
+
+// Обновление информации о пользователе
+app.put('/api/user/update', async (req, res) => {
+  console.log('Запрос на обновление информации получен');
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.error('Ошибка авторизации: токен отсутствует или некорректный');
+    return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+    const decoded = jwt.verify(token, secretKey);
+    const iin = decoded.iin;
+
+    console.log('Токен успешно верифицирован. ИИН:', iin);
+
+    const user = await User.findOne({ iin });
+    if (!user) {
+      console.error('Пользователь не найден');
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    const { scopusId, wosId, orcid, birthDate, phone, email, researchArea } = req.body;
+    console.log('Данные для обновления:', req.body);
+
+    user.scopusId = scopusId || user.scopusId;
+    user.wosId = wosId || user.wosId;
+    user.orcid = orcid || user.orcid;
+    user.birthDate = birthDate || user.birthDate;
+    user.phone = phone || user.phone;
+    user.email = email || user.email;
+    user.researchArea = researchArea || user.researchArea;
+
+    await user.save();
+
+    console.log('Информация пользователя успешно обновлена');
+    res.status(200).json({ message: 'Данные успешно обновлены' });
+  } catch (error) {
+    console.error('Ошибка при обновлении данных пользователя:', error);
+    res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
+  }
+});
+
+// Загрузка фотографии профиля пользователя
+app.post('/api/user/uploadPhoto', upload.single('profilePhoto'), async (req, res) => {
+  console.log('Запрос на загрузку фотографии получен');
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.error('Ошибка авторизации: токен отсутствует или некорректный');
+    return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+    const decoded = jwt.verify(token, secretKey);
+    const iin = decoded.iin;
+
+    console.log('Токен успешно верифицирован. ИИН:', iin);
+
+    if (!req.file) {
+      console.error('Файл не был загружен');
+      return res.status(400).json({ message: 'Файл не был загружен' });
+    }
+
+    console.log('Файл успешно загружен:', req.file.filename);
+    const filePath = `/uploads/${req.file.filename}`;
+
+    const user = await User.findOne({ iin });
+    if (!user) {
+      console.error('Пользователь не найден');
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    user.profilePhoto = filePath;
+    await user.save();
+
+    console.log('Фотография успешно сохранена в базе данных');
+    res.status(200).json({ message: 'Фотография успешно загружена', profilePhoto: filePath });
+  } catch (error) {
+    console.error('Ошибка при обработке запроса:', error);
+    res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
+  }
+});
+
+app.get('/api/user/profile', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.error('Ошибка авторизации: токен отсутствует или некорректный');
+    return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+    const decoded = jwt.verify(token, secretKey);
+    const iin = decoded.iin;
+
+    console.log('Токен успешно верифицирован. ИИН:', iin);
+
+    const user = await User.findOne({ iin }).select('-password');
+    if (!user) {
+      console.error('Пользователь не найден');
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    console.log('Данные пользователя найдены:', user);
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('Ошибка при получении данных пользователя:', error);
+    res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
   }
 });
 

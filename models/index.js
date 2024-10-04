@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
 
+// Подключение к базе данных MongoDB
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log('Успешное подключение к MongoDB'))
-.catch((error) => console.error('Ошибка подключения к MongoDB:', error));
+  .then(() => console.log('Успешное подключение к MongoDB'))
+  .catch((error) => console.error('Ошибка подключения к MongoDB:', error));
 
+// Определение модели пользователя
 const userSchema = new mongoose.Schema({
   iin: {
     type: String,
@@ -15,6 +16,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  profilePhoto: {
+    type: String, // URL фотографии пользователя
+  },
+  scopusId: String,
+  wosId: String,
+  orcid: String,
+  birthDate: String,
+  phone: String,
+  email: String,
+  researchArea: String,
 });
 
 const User = mongoose.model('User', userSchema);
