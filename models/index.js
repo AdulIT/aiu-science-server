@@ -1,30 +1,22 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const mongoose = require('mongoose');
+require('dotenv').config();
 
-// Создаем новое подключение к базе данных SQLite
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite', // Путь к файлу базы данных
-});
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log('Успешное подключение к MongoDB'))
+.catch((error) => console.error('Ошибка подключения к MongoDB:', error));
 
-// Определение модели пользователя
-const User = sequelize.define('User', {
+const userSchema = new mongoose.Schema({
   iin: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
     unique: true,
   },
   password: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
   },
 });
 
-// Синхронизируем модель с базой данных
-sequelize.sync()
-  .then(() => console.log('База данных и таблицы созданы'))
-  .catch((error) => console.error('Ошибка при создании базы данных:', error));
+const User = mongoose.model('User', userSchema);
 
-module.exports = {
-  User,
-  sequelize,
-};
+module.exports = { User };

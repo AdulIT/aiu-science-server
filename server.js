@@ -1,74 +1,88 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const dotenv = require('dotenv');
 
-dotenv.config(); // Загружаем переменные окружения из .env файла
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Простая база данных пользователей (для демонстрации)
-const users = [];
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('Connected to MongoDB successfully'))
+  .catch((error) => console.error('MongoDB connection error:', error));
 
-// Маршрут для регистрации пользователя
-app.post('/api/register', async (req, res) => {
-  const { iin, password } = req.body;
-
-  // Проверка, есть ли пользователь с таким же ИИН
-  const existingUser = users.find((user) => user.iin === iin);
-  if (existingUser) {
-    return res.status(400).json({ message: 'Пользователь с таким ИИН уже зарегистрирован' });
-  }
-
-  // Хеширование пароля
-  const hashedPassword = await bcrypt.hash(password, 10);
-  users.push({ iin, password: hashedPassword });
-
-  res.status(201).json({ message: 'Пользователь успешно зарегистрирован' });
+const userSchema = new mongoose.Schema({
+  iin: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
 });
 
-// Маршрут для входа пользователя
-app.post('/api/login', async (req, res) => {
+const User = mongoose.model('User', userSchema);
+
+app.post('/api/auth/register', async (req, res) => {
   const { iin, password } = req.body;
 
-  const user = users.find((user) => user.iin === iin);
-  if (!user) {
-    return res.status(400).json({ message: 'Пользователь не найден' });
-  }
-
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    return res.status(401).json({ message: 'Неверный пароль' });
-  }
-
-  // Генерация JWT токена
-  const token = jwt.sign({ iin: user.iin }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token });
-});
-
-// Пример защищенного маршрута
-app.get('/api/protected', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: 'Нет доступа' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: 'Токен невалиден' });
+  try {
+    // Check if the user already exists
+    const existingUser = await User.findOne({ iin });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this IIN already registered' });
     }
-    res.json({ message: 'Защищенные данные', user });
-  });
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new User({ iin, password: hashedPassword });
+    await newUser.save();
+
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    console.error('Error during user registration:', error);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { iin, password } = req.body;
+
+  try {
+    // Find user by IIN
+    const user = await User.findOne({ iin });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
+    // Compare password with stored hash
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ success: false, message: 'Invalid password' });
+    }
+
+    // Generate JWT token
+    const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+    const token = jwt.sign({ iin: user.iin }, secretKey, { expiresIn: '1h' });
+
+    // Return token
+    res.status(200).json({ success: true, token });
+  } catch (error) {
+    console.error('Error during user login:', error);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

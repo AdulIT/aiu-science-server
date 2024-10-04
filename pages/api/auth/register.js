@@ -1,26 +1,23 @@
 import bcrypt from 'bcryptjs';
-import { User } from '../../../models'; // Импортируем модель User
+import { User } from '../../../models';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    // Если метод не POST, возвращаем ошибку
     return res.status(405).json({ message: 'Метод не разрешен' });
   }
 
   const { iin, password } = req.body;
 
   try {
-    // Проверка, есть ли пользователь с таким же ИИН
-    const existingUser = await User.findOne({ where: { iin } });
+    const existingUser = await User.findOne({ iin });
     if (existingUser) {
       return res.status(400).json({ message: 'Пользователь с таким ИИН уже зарегистрирован' });
     }
 
-    // Хеширование пароля
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Создание нового пользователя
-    await User.create({ iin, password: hashedPassword });
+    const newUser = new User({ iin, password: hashedPassword });
+    await newUser.save();
 
     res.status(201).json({ message: 'Пользователь успешно зарегистрирован' });
   } catch (error) {
