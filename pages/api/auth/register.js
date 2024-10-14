@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Метод не разрешен' });
   }
 
-  const { iin, password } = req.body;
+  const { iin, password, role = 'user' } = req.body;
 
   try {
     const existingUser = await User.findOne({ iin });
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({ iin, password: hashedPassword });
+    const newUser = new User({ iin, password: hashedPassword, role });
     await newUser.save();
 
     res.status(201).json({ message: 'Пользователь успешно зарегистрирован' });

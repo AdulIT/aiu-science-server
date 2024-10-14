@@ -16,6 +16,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user', // Все новые пользователи по умолчанию будут обычными
+  },
   profilePhoto: {
     type: String, // URL фотографии пользователя
   },

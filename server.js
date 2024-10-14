@@ -12,7 +12,11 @@ const fs = require('fs');
 dotenv.config();
 const { User } = require('./models');
 const Publication = require('./models/Publication');
+const { verifyToken, authenticateAdmin } = require('./middleware/auth');
+const userPublications = require('./routes/userPublications');
+const adminPublications = require('./routes/adminPublications');
 
+const router = express.Router();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -205,63 +209,152 @@ app.get('/api/user/profile', async (req, res) => {
     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
   }
 });
+app.use('/api', userPublications);
+app.use('/api', adminPublications);
+// app.get('/api/user/publications', verifyToken, authenticateUser, async (req, res) => {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+//     return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+//   }
 
-app.get('/api/user/publications', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Отсутствует токен авторизации' });
-  }
+//   const token = authHeader.split(' ')[1];
 
-  const token = authHeader.split(' ')[1];
+//   try {
+//     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+//     const decoded = jwt.verify(token, secretKey);
+//     const iin = decoded.iin;
+
+//     const publications = await Publication.find({ iin });
+//     res.status(200).json(publications);
+//   } catch (error) {
+//     console.error('Ошибка при получении публикаций:', error);
+//     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
+//   }
+// });
+
+// // Добавление новой публикации
+// app.post('/api/user/publications', async (req, res) => {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+//     return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+//   }
+
+//   const token = authHeader.split(' ')[1];
+
+//   try {
+//     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+//     const decoded = jwt.verify(token, secretKey);
+//     const iin = decoded.iin;
+
+//     const { authors, title, year, output, doi, percentile } = req.body;
+
+//     const newPublication = new Publication({
+//       iin,
+//       authors,
+//       title,
+//       year,
+//       output,
+//       doi,
+//       percentile,
+//     });
+
+//     await newPublication.save();
+
+//     res.status(201).json(newPublication);
+//   } catch (error) {
+//     console.error('Ошибка при добавлении публикации:', error);
+//     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
+//   }
+// });
+
+// Добавим новый эндпоинт для создания администратора
+app.post('/api/admin/create', async (req, res) => {
+  const { iin, password } = req.body;
 
   try {
+    // Проверим, что запрос отправлен администратором
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+    }
+
+    const token = authHeader.split(' ')[1];
     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
     const decoded = jwt.verify(token, secretKey);
-    const iin = decoded.iin;
 
-    const publications = await Publication.find({ iin });
-    res.status(200).json(publications);
+    // Проверяем, является ли пользователь администратором
+    const requestingUser = await User.findOne({ iin: decoded.iin });
+    if (requestingUser.role !== 'admin') {
+      return res.status(403).json({ message: 'Доступ запрещен' });
+    }
+
+    // Проверим, существует ли пользователь с таким ИИН
+    const existingUser = await User.findOne({ iin });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Пользователь с таким ИИН уже зарегистрирован' });
+    }
+
+    // Создадим нового администратора
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newAdmin = new User({ iin, password: hashedPassword, role: 'admin' });
+    await newAdmin.save();
+
+    res.status(201).json({ message: 'Администратор успешно создан' });
   } catch (error) {
-    console.error('Ошибка при получении публикаций:', error);
+    console.error('Ошибка при создании администратора:', error);
     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
   }
 });
 
-// Добавление новой публикации
-app.post('/api/user/publications', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Отсутствует токен авторизации' });
-  }
-
-  const token = authHeader.split(' ')[1];
-
+// Эндпоинт для получения всех пользователей (только для администратора)
+app.get('/api/admin/users', async (req, res) => {
   try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Отсутствует токен авторизации' });
+    }
+
+    const token = authHeader.split(' ')[1];
     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
     const decoded = jwt.verify(token, secretKey);
-    const iin = decoded.iin;
 
-    const { authors, title, year, output, doi, percentile } = req.body;
+    // Проверяем, является ли пользователь администратором
+    const requestingUser = await User.findOne({ iin: decoded.iin });
+    if (requestingUser.role !== 'admin') {
+      return res.status(403).json({ message: 'Доступ запрещен' });
+    }
 
-    const newPublication = new Publication({
-      iin,
-      authors,
-      title,
-      year,
-      output,
-      doi,
-      percentile,
-    });
-
-    await newPublication.save();
-
-    res.status(201).json(newPublication);
+    const users = await User.find({});
+    res.status(200).json({ success: true, users });
   } catch (error) {
-    console.error('Ошибка при добавлении публикации:', error);
+    console.error('Ошибка при получении пользователей:', error);
     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
   }
 });
+
+router.get('/admin/publications', verifyToken, authenticateAdmin, async (req, res) => {
+  try {
+    const publications = await Publication.find(); // Получаем все публикации в системе
+    res.json(publications);
+  } catch (error) {
+    console.error('Ошибка при загрузке всех публикаций:', error);
+    res.status(500).json({ message: 'Ошибка при загрузке всех публикаций' });
+  }
+});
+
+module.exports = router;
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// const bcrypt = require('bcryptjs');
+// bcrypt.hash('840915301433admin!', 10).then(console.log);
+
+// $2a$10$Z9waisJk446AaLDx0nPOnu9IieiSP/7IrWAHCk1AqSC96T3i8UX8i
+
+// {
+// 	"iin": "840915301433",
+// 	"password": "840915301433admin!",
+// 	"role": "admin"
+// }
