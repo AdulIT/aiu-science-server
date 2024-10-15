@@ -82,9 +82,20 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
-    const token = jwt.sign({ iin: user.iin }, secretKey, { expiresIn: '1h' });
+    const accessToken = jwt.sign(
+      { iin: user.iin, role: user.role },
+      secretKey,
+      { expiresIn: '15m' }
+    );
 
-    res.status(200).json({ success: true, token });
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || 'defaultRefreshSecret';
+    const refreshToken = jwt.sign(
+      { iin: user.iin },
+      refreshSecret,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({ success: true, accessToken, refreshToken });
   } catch (error) {
     console.error('Error during user login:', error);
     res.status(500).json({ message: 'Server error. Please try again later.' });

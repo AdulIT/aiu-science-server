@@ -20,14 +20,21 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, message: 'Неверный пароль' });
     }
 
-    const secretKey = process.env.JWT_SECRET || 'defaultSecretKey'; 
-    const token = jwt.sign(
-      { iin: user.iin, role: user.role },
+    const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+    const accessToken = jwt.sign(
+      { iin: user.iin, role: user.role }, 
       secretKey, 
-      { expiresIn: '1h' }
+      { expiresIn: '15m' }
     );
 
-    res.status(200).json({ success: true, token });
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || 'defaultRefreshSecret';
+    const refreshToken = jwt.sign(
+      { iin: user.iin }, 
+      refreshSecret,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({ success: true, accessToken, refreshToken });
   } catch (error) {
     console.error('Ошибка при авторизации пользователя:', error);
     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });

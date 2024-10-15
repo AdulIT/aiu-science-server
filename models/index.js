@@ -19,10 +19,10 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['user', 'admin'],
-    default: 'user', // Все новые пользователи по умолчанию будут обычными
+    default: 'user',
   },
   profilePhoto: {
-    type: String, // URL фотографии пользователя
+    type: String,
   },
   scopusId: String,
   wosId: String,
@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema({
   phone: String,
   email: String,
   researchArea: String,
+  refreshToken: {
+    type: String,
+  },
 });
 
 const User = mongoose.model('User', userSchema);
