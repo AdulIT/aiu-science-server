@@ -34,6 +34,8 @@ const userSchema = new mongoose.Schema({
   refreshToken: {
     type: String,
   },
+  fullName: { type: String },
+  higherSchool: { type: String },
 });
 
 const User = mongoose.model('User', userSchema);

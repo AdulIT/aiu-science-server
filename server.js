@@ -126,9 +126,10 @@ app.put('/api/user/update', async (req, res) => {
       return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
-    const { scopusId, wosId, orcid, birthDate, phone, email, researchArea } = req.body;
+    const { fullName, scopusId, wosId, orcid, birthDate, phone, email, researchArea, higherSchool } = req.body;
     console.log('Данные для обновления:', req.body);
 
+    user.fullName = fullName || user.fullName;
     user.scopusId = scopusId || user.scopusId;
     user.wosId = wosId || user.wosId;
     user.orcid = orcid || user.orcid;
@@ -136,6 +137,7 @@ app.put('/api/user/update', async (req, res) => {
     user.phone = phone || user.phone;
     user.email = email || user.email;
     user.researchArea = researchArea || user.researchArea;
+    user.higherSchool = higherSchool || user.higherSchool;
 
     await user.save();
 
