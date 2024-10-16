@@ -147,7 +147,6 @@ app.put('/api/user/update', async (req, res) => {
   }
 });
 
-// Загрузка фотографии профиля пользователя
 app.post('/api/user/uploadPhoto', upload.single('profilePhoto'), async (req, res) => {
   console.log('Запрос на загрузку фотографии получен');
 
@@ -278,12 +277,10 @@ app.use('/api', adminPublications);
 //   }
 // });
 
-// Добавим новый эндпоинт для создания администратора
 app.post('/api/admin/create', async (req, res) => {
   const { iin, password } = req.body;
 
   try {
-    // Проверим, что запрос отправлен администратором
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Отсутствует токен авторизации' });
@@ -293,19 +290,16 @@ app.post('/api/admin/create', async (req, res) => {
     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
     const decoded = jwt.verify(token, secretKey);
 
-    // Проверяем, является ли пользователь администратором
     const requestingUser = await User.findOne({ iin: decoded.iin });
     if (requestingUser.role !== 'admin') {
       return res.status(403).json({ message: 'Доступ запрещен' });
     }
 
-    // Проверим, существует ли пользователь с таким ИИН
     const existingUser = await User.findOne({ iin });
     if (existingUser) {
       return res.status(400).json({ message: 'Пользователь с таким ИИН уже зарегистрирован' });
     }
 
-    // Создадим нового администратора
     const hashedPassword = await bcrypt.hash(password, 10);
     const newAdmin = new User({ iin, password: hashedPassword, role: 'admin' });
     await newAdmin.save();
@@ -317,7 +311,6 @@ app.post('/api/admin/create', async (req, res) => {
   }
 });
 
-// Эндпоинт для получения всех пользователей (только для администратора)
 app.get('/api/admin/users', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -329,7 +322,6 @@ app.get('/api/admin/users', async (req, res) => {
     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
     const decoded = jwt.verify(token, secretKey);
 
-    // Проверяем, является ли пользователь администратором
     const requestingUser = await User.findOne({ iin: decoded.iin });
     if (requestingUser.role !== 'admin') {
       return res.status(403).json({ message: 'Доступ запрещен' });
@@ -345,7 +337,7 @@ app.get('/api/admin/users', async (req, res) => {
 
 router.get('/admin/publications', verifyToken, authenticateAdmin, async (req, res) => {
   try {
-    const publications = await Publication.find(); // Получаем все публикации в системе
+    const publications = await Publication.find();
     res.json(publications);
   } catch (error) {
     console.error('Ошибка при загрузке всех публикаций:', error);
@@ -362,7 +354,7 @@ app.listen(PORT, () => {
 // const bcrypt = require('bcryptjs');
 // bcrypt.hash('840915301433admin!', 10).then(console.log);
 
-// $2a$10$Z9waisJk446AaLDx0nPOnu9IieiSP/7IrWAHCk1AqSC96T3i8UX8i
+// $2a$10$B7.dZMGyAzLosAS/kiooYu58aIRqMCwszlodn5KARx2Rr5Xwf18Wq
 
 // {
 // 	"iin": "840915301433",

@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     const accessToken = jwt.sign(
       { iin: user.iin, role: user.role }, 
       secretKey, 
-      { expiresIn: '15m' }
+      { expiresIn: '1h' }
     );
 
     const refreshSecret = process.env.JWT_REFRESH_SECRET || 'defaultRefreshSecret';

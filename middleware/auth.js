@@ -12,6 +12,9 @@ function verifyToken(req, res, next) {
     req.user = decoded;
     next();
   } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Токен истек', error });
+    }
     return res.status(401).json({ message: 'Неверный токен' });
   }
 }
