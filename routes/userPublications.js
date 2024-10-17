@@ -1,13 +1,40 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
 const { verifyToken, authenticateUser } = require('../middleware/auth');
 const Publication = require('../models/Publication');
 
 const router = express.Router();
 
+// Ограничения для загрузки файлов: только PDF и размер не более 5 МБ
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/uploads/publications/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (ext !== '.pdf') {
+    return cb(new Error('Файл должен быть формата PDF'), false);
+  }
+  cb(null, true);
+};
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: fileFilter,
+});
+
 router.get('/user/publications', verifyToken, authenticateUser, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const publications = await Publication.find({ userId });
+    const iin = req.user.iin;
+    const publications = await Publication.find({ iin });
 
     res.json(publications);
   } catch (error) {
@@ -16,19 +43,23 @@ router.get('/user/publications', verifyToken, authenticateUser, async (req, res)
   }
 });
 
-router.post('/user/publications', verifyToken, authenticateUser, async (req, res) => {
+router.post('/user/publications', verifyToken, authenticateUser, upload.single('file'), async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { authors, title, year, output, doi, percentile } = req.body;
+    const iin = req.user.iin;
+    const { authors, title, year, output, doi, isbn, scopus, wos, publicationType } = req.body;
 
     const newPublication = new Publication({
-      userId,
+      iin,
       authors,
       title,
       year,
       output,
       doi,
-      percentile,
+      isbn,
+      scopus: scopus || false, // По умолчанию флаг установлен в false
+      wos: wos || false,       // По умолчанию флаг установлен в false
+      publicationType,
+      file: req.file ? `public/uploads/publications/${req.file.filename}` : null, // Если файл был загружен
     });
 
     const savedPublication = await newPublication.save();

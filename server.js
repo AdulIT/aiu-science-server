@@ -44,7 +44,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
+// app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 app.post('/api/auth/register', async (req, res) => {
   const { iin, password } = req.body;
