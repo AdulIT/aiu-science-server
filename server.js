@@ -15,6 +15,7 @@ const Publication = require('./models/Publication');
 const { verifyToken, authenticateAdmin } = require('./middleware/auth');
 const userPublications = require('./routes/userPublications');
 const adminPublications = require('./routes/adminPublications');
+const { generateAllPublicationsReport, generateSingleUserReport } = require('./services/reportGenerator');
 
 const router = express.Router();
 
@@ -338,13 +339,87 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
-router.get('/admin/publications', verifyToken, authenticateAdmin, async (req, res) => {
+// router.get('/admin/publications', verifyToken, authenticateAdmin, async (req, res) => {
+app.get('/api/admin/publications', verifyToken, authenticateAdmin, async (req, res) => {
   try {
     const publications = await Publication.find();
     res.json(publications);
   } catch (error) {
     console.error('Ошибка при загрузке всех публикаций:', error);
     res.status(500).json({ message: 'Ошибка при загрузке всех публикаций' });
+  }
+});
+
+// Добавляем новый маршрут для получения профиля пользователя по ИИН
+app.get('/api/admin/user/:iin', verifyToken, authenticateAdmin, async (req, res) => {
+  try {
+    const user = await User.findOne({ iin: req.params.iin });
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+    res.json({ user });
+  } catch (error) {
+    console.error('Ошибка при получении профиля пользователя:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// router.post('/api/admin/generateUserReport', async (req, res) => {
+//   const { userId } = req.body;
+
+//   try {
+//     // Fetch user data and publications (replace with actual data fetching logic)
+//     const userData = await getUserDataById(userId);
+//     const publications = await getUserPublications(userId);
+
+//     // Generate the Word report
+//     await generateUserReport(userData, publications);
+
+//     // Send the report as a downloadable file
+//     res.download(`./reports/${userData.fullName}_work_list.docx`);
+//   } catch (error) {
+//     res.status(500).send('Error generating the report');
+//   }
+// });
+
+app.post('/api/admin/generateUserReport', verifyToken, async (req, res) => {
+  
+  const { iin } = req.body;
+
+  try {
+    const user = await User.findOne({ iin });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const publications = await Publication.find({ iin });
+    if (publications.length === 0) return res.status(404).json({ message: 'No publications found for this user' });
+
+    const filePath = await generateSingleUserReport(user, publications);
+    res.download(filePath);
+  } catch (error) {
+    console.error('Error generating report:', error);
+    res.status(500).json({ message: 'Error generating report' });
+  }
+});
+
+app.post('/api/admin/generateAllPublicationsReport', verifyToken, async (req, res) => {
+  const publicationsByUser = {};
+
+  try {
+    const users = await User.find({});
+  
+    for (const user of users) {
+      publicationsByUser[user.iin] = {
+        user,
+        publications: await Publication.find({ iin: user.iin }),
+      };
+    }
+
+    const filePath = await generateAllPublicationsReport(publicationsByUser);
+    
+    res.download(filePath);
+  } catch (error) {
+    console.error('Error generating report:', error);
+    res.status(500).json({ message: 'Error generating report' });
   }
 });
 
