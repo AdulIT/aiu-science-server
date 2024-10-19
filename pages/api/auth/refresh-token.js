@@ -1,7 +1,7 @@
-import jwt from 'jsonwebtoken';
-import { User } from '../../../models';
+const jwt = require('jsonwebtoken');
+const { User } = require('../../../models/index');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Метод не разрешен' });
   }

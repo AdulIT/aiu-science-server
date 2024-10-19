@@ -16,6 +16,7 @@ const { verifyToken, authenticateAdmin } = require('./middleware/auth');
 const userPublications = require('./routes/userPublications');
 const adminPublications = require('./routes/adminPublications');
 const { generateAllPublicationsReport, generateSingleUserReport } = require('./services/reportGenerator');
+const refreshTokenHandler = require('./pages/api/auth/refresh-token'); // Импорт функции обработчика
 
 const router = express.Router();
 
@@ -225,61 +226,6 @@ app.get('/api/user/profile', async (req, res) => {
 });
 app.use('/api', userPublications);
 app.use('/api', adminPublications);
-// app.get('/api/user/publications', verifyToken, authenticateUser, async (req, res) => {
-//   const authHeader = req.headers.authorization;
-//   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-//     return res.status(401).json({ message: 'Отсутствует токен авторизации' });
-//   }
-
-//   const token = authHeader.split(' ')[1];
-
-//   try {
-//     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
-//     const decoded = jwt.verify(token, secretKey);
-//     const iin = decoded.iin;
-
-//     const publications = await Publication.find({ iin });
-//     res.status(200).json(publications);
-//   } catch (error) {
-//     console.error('Ошибка при получении публикаций:', error);
-//     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
-//   }
-// });
-
-// // Добавление новой публикации
-// app.post('/api/user/publications', async (req, res) => {
-//   const authHeader = req.headers.authorization;
-//   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-//     return res.status(401).json({ message: 'Отсутствует токен авторизации' });
-//   }
-
-//   const token = authHeader.split(' ')[1];
-
-//   try {
-//     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
-//     const decoded = jwt.verify(token, secretKey);
-//     const iin = decoded.iin;
-
-//     const { authors, title, year, output, doi, percentile } = req.body;
-
-//     const newPublication = new Publication({
-//       iin,
-//       authors,
-//       title,
-//       year,
-//       output,
-//       doi,
-//       percentile,
-//     });
-
-//     await newPublication.save();
-
-//     res.status(201).json(newPublication);
-//   } catch (error) {
-//     console.error('Ошибка при добавлении публикации:', error);
-//     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
-//   }
-// });
 
 app.post('/api/admin/create', async (req, res) => {
   const { iin, password } = req.body;
@@ -364,24 +310,6 @@ app.get('/api/admin/user/:iin', verifyToken, authenticateAdmin, async (req, res)
   }
 });
 
-// router.post('/api/admin/generateUserReport', async (req, res) => {
-//   const { userId } = req.body;
-
-//   try {
-//     // Fetch user data and publications (replace with actual data fetching logic)
-//     const userData = await getUserDataById(userId);
-//     const publications = await getUserPublications(userId);
-
-//     // Generate the Word report
-//     await generateUserReport(userData, publications);
-
-//     // Send the report as a downloadable file
-//     res.download(`./reports/${userData.fullName}_work_list.docx`);
-//   } catch (error) {
-//     res.status(500).send('Error generating the report');
-//   }
-// });
-
 app.post('/api/admin/generateUserReport', verifyToken, async (req, res) => {
   
   const { iin } = req.body;
@@ -394,6 +322,10 @@ app.post('/api/admin/generateUserReport', verifyToken, async (req, res) => {
     if (publications.length === 0) return res.status(404).json({ message: 'No publications found for this user' });
 
     const filePath = await generateSingleUserReport(user, publications);
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename=${user.fullName}_work_list.docx`);
+
     res.download(filePath);
   } catch (error) {
     console.error('Error generating report:', error);
@@ -415,13 +347,30 @@ app.post('/api/admin/generateAllPublicationsReport', verifyToken, async (req, re
     }
 
     const filePath = await generateAllPublicationsReport(publicationsByUser);
-    
-    res.download(filePath);
+
+    if (fs.existsSync(filePath)) {
+      // Устанавливаем заголовки для скачивания файла
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename=all_publications_${new Date().getFullYear()}.docx`);
+      
+      // Передача файла в ответе
+      res.download(filePath, (err) => {
+        if (err) {
+          console.error('Error sending file:', err);
+          res.status(500).json({ message: 'Error sending file' });
+        }
+      });
+    } else {
+      console.error('File not found:', filePath);
+      res.status(404).json({ message: 'Report file not found' });
+    }
   } catch (error) {
     console.error('Error generating report:', error);
     res.status(500).json({ message: 'Error generating report' });
   }
 });
+
+app.post('/api/auth/refresh-token', refreshTokenHandler);
 
 module.exports = router;
 

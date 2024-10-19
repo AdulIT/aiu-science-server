@@ -2,6 +2,7 @@ const { Document, Packer, Paragraph, Table, TableRow, TableCell, HeadingLevel, A
 const fs = require('fs');
 const path = require('path');
 
+// Генерация отчета для одного пользователя
 async function generateSingleUserReport(userData, publications) {
   const doc = new Document({
     sections: [
@@ -40,52 +41,51 @@ async function generateSingleUserReport(userData, publications) {
                   new TableCell({ children: [new Paragraph("Авторы")] }),
                 ],
               }),
+              ...publications.map((pub, index) => (
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph((index + 1).toString())] }),
+                    new TableCell({ children: [new Paragraph(pub.title)] }),
+                    new TableCell({ children: [new Paragraph("Печатный")] }),
+                    new TableCell({ children: [new Paragraph(pub.output || 'N/A')] }),
+                    new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : 'N/A')] }),
+                    new TableCell({
+                      children: [new Paragraph(
+                        Array.isArray(pub.authors) ? (pub.authors.length > 0 ? pub.authors.join(', ') : 'N/A') : pub.authors || 'N/A'
+                      )]
+                    })
+                  ],
+                })
+              )),
             ],
           }),
-          ...publications.map((pub, index) => (
-            new TableRow({
-              children: [
-                new TableCell({ children: [new Paragraph((index + 1).toString())] }),
-                new TableCell({ children: [new Paragraph(pub.title)] }),
-                new TableCell({ children: [new Paragraph("Печатный")] }),
-                new TableCell({ children: [new Paragraph(pub.output)] }),
-                new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : "N/A")] }),
-                new TableCell({
-                  children: [new Paragraph(
-                    Array.isArray(pub.authors) ? pub.authors.join(', ') : pub.authors // Handle if authors is a string or array
-                  )]
-                }),
-              ],
-            })
-          )),
         ],
       },
     ],
   });
 
-  const packer = new Packer();
-
   try {
+    // Использование статического метода Packer.toBuffer() для упаковки документа
     const buffer = await Packer.toBuffer(doc);
 
-    // Ensure that the 'reports' directory exists
+    // Создание директории для отчетов, если она не существует
     const reportsDir = path.join(__dirname, 'reports');
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir);
     }
 
-    // File path for the report
+    // Сохранение документа в файл
     const filePath = path.join(reportsDir, `${userData.fullName}_work_list.docx`);
     fs.writeFileSync(filePath, buffer);
 
-    return filePath; // Return the file path for download
+    return filePath;
   } catch (error) {
     console.error("Error while packing document: ", error);
     throw new Error("Could not generate the Word document.");
   }
 }
 
-
+// Генерация отчета по всем публикациям
 async function generateAllPublicationsReport(publicationsByUser) {
     const doc = new Document({
       sections: [
@@ -132,9 +132,15 @@ async function generateAllPublicationsReport(publicationsByUser) {
                     new TableCell({ children: [new Paragraph((index + 1).toString())] }),
                     new TableCell({ children: [new Paragraph(pub.title)] }),
                     new TableCell({ children: [new Paragraph("Печатный")] }),
-                    new TableCell({ children: [new Paragraph(pub.output)] }),
+                    new TableCell({ children: [new Paragraph(pub.output || 'N/A')] }),
                     new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : "N/A")] }),
-                    new TableCell({ children: [new Paragraph(pub.authors.join(', '))] }),
+                    
+                    // Проверяем, является ли `pub.authors` массивом
+                    new TableCell({
+                      children: [new Paragraph(
+                        Array.isArray(pub.authors) ? pub.authors.join(', ') : (pub.authors || 'N/A')
+                      )]
+                    })
                   ],
                 })
               )),
@@ -144,13 +150,25 @@ async function generateAllPublicationsReport(publicationsByUser) {
       ],
     });
   
-    const packer = new Packer();
-    const buffer = await packer.toBuffer(doc);
+    try {
+      // Убедимся, что директория 'reports' существует
+      const reportsDir = path.join(__dirname, 'reports');
+      if (!fs.existsSync(reportsDir)) {
+        fs.mkdirSync(reportsDir);  // Создаем директорию, если она не существует
+      }
   
-    const filePath = `./reports/all_publications_${new Date().getFullYear()}.docx`;
-    fs.writeFileSync(filePath, buffer);
+      // Используем Packer.toBuffer для упаковки документа
+      const buffer = await Packer.toBuffer(doc);
   
-    return filePath;
+      // Путь к файлу
+      const filePath = path.join(reportsDir, `all_publications_${new Date().getFullYear()}.docx`);
+      fs.writeFileSync(filePath, buffer);
+  
+      return filePath;
+    } catch (error) {
+      console.error("Error while packing document: ", error);
+      throw new Error("Could not generate the Word document.");
+    }
   }
 
 module.exports = { generateSingleUserReport, generateAllPublicationsReport };
