@@ -16,7 +16,8 @@ const { verifyToken, authenticateAdmin } = require('./middleware/auth');
 const userPublications = require('./routes/userPublications');
 const adminPublications = require('./routes/adminPublications');
 const { generateAllPublicationsReport, generateSingleUserReport } = require('./services/reportGenerator');
-const refreshTokenHandler = require('./pages/api/auth/refresh-token'); // Импорт функции обработчика
+const { generateUserResume, generateUserResumePDF } = require('./services/resumeGenerator');
+const refreshTokenHandler = require('./pages/api/auth/refresh-token');
 
 const router = express.Router();
 
@@ -296,7 +297,6 @@ app.get('/api/admin/publications', verifyToken, authenticateAdmin, async (req, r
   }
 });
 
-// Добавляем новый маршрут для получения профиля пользователя по ИИН
 app.get('/api/admin/user/:iin', verifyToken, authenticateAdmin, async (req, res) => {
   try {
     const user = await User.findOne({ iin: req.params.iin });
@@ -371,6 +371,109 @@ app.post('/api/admin/generateAllPublicationsReport', verifyToken, async (req, re
 });
 
 app.post('/api/auth/refresh-token', refreshTokenHandler);
+
+app.get('/api/user/:iin/publications', async (req, res) => {
+  const { iin } = req.params;
+  try {
+    const publications = await Publication.find({ iin });
+    res.json({ publications });
+  } catch (error) {
+    console.error('Ошибка при получении публикаций:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+app.post('/api/user/generateResume', verifyToken, async (req, res) => {
+  const { iin } = req.body;
+  try {
+    const user = await User.findOne({ iin });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const publications = await Publication.find({ iin });
+    const resumePathDocx = await generateUserResume(user, publications);
+    const resumePathPdf = await generateUserResumePDF(user, publications);
+    console.log(resumePathDocx);
+
+    res.status(200).json({ success: true, docxPath: resumePathDocx, pdfPath: resumePathPdf });
+  } catch (error) {
+    console.error('Error generating resume:', error);
+    res.status(500).json({ message: 'Error generating resume' });
+  }
+});
+
+app.get('/api/user/downloadResumeDocx', (req, res) => {
+  const { path } = req.query;
+  if (fs.existsSync(path)) {
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename=${path}`);
+    res.download(path);
+  } else {
+    res.status(404).json({ message: 'File not found' });
+  }
+});
+
+app.get('/api/user/downloadResumePdf', (req, res) => {
+  const { path } = req.query;
+  if (fs.existsSync(path)) {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=${path}`);
+    res.download(path);
+  } else {
+    res.status(404).json({ message: 'File not found' });
+  }
+});
+
+
+
+app.get('/api/user/downloadResumePdf', (req, res) => {
+  const filePath = path.resolve(req.query.path); // Resolve the absolute file path
+  if (fs.existsSync(filePath)) {
+    const fileName = encodeURIComponent(path.basename(filePath)); // URL-encode the file name
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`); // Ensure the filename is safe
+    res.download(filePath);
+  } else {
+    res.status(404).json({ message: 'File not found' });
+  }
+});
+
+app.get('/api/user/downloadResumeDocx', (req, res) => {
+  const filePath = path.resolve(req.query.path); // Resolve the absolute file path
+  if (fs.existsSync(filePath)) {
+    const fileName = encodeURIComponent(path.basename(filePath)); // URL-encode the file name
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    console.log(fileName)
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`); // Ensure the filename is safe
+    res.download(filePath);
+  } else {
+    res.status(404).json({ message: 'File not found' });
+  }
+});
+
+// app.get('/api/user/:iin', verifyToken, async (req, res) => {
+//   const { iin } = req.params;
+
+//   try {
+//     const user = await User.findOne({ iin });
+
+//     if (!user) {
+//       return res.status(404).json({ message: 'Пользователь не найден' });
+//     }
+
+//     res.status(200).json({
+//       iin: user.iin,
+//       fullName: user.fullName,
+//       email: user.email,
+//       phone: user.phone,
+//       researchArea: user.researchArea,
+//       higherSchool: user.higherSchool,
+//       role: user.role
+//     });
+//   } catch (error) {
+//     console.error('Ошибка при получении пользователя:', error);
+//     res.status(500).json({ message: 'Ошибка сервера' });
+//   }
+// });
 
 module.exports = router;
 
