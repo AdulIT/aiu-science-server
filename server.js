@@ -323,8 +323,10 @@ app.post('/api/admin/generateUserReport', verifyToken, async (req, res) => {
 
     const filePath = await generateSingleUserReport(user, publications);
 
+    const sanitizedFileName = `${user.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_work_list.docx`;
+
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename=${user.fullName}_work_list.docx`);
+    res.setHeader('Content-Disposition', `attachment; filename=${sanitizedFileName}`);
 
     res.download(filePath);
   } catch (error) {
