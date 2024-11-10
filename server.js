@@ -84,6 +84,8 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   const { iin, password } = req.body;
+  console.log("Received a request at /api/auth/login");
+
 
   try {
     const user = await User.findOne({ iin });
