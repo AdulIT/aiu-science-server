@@ -30,6 +30,7 @@ const allowedOrigins = [process.env.LOCAL_ORIGIN, process.env.PRODUCTION_ORIGIN]
 const corsOptions = {
   origin: allowedOrigins,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
   credentials: true,
 };
 
