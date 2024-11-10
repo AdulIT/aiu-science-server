@@ -3,23 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 async function generateSingleUserReport(userData, publications) {
-  const types = {
-    koknvo: [],
-    scopus_wos: [],
-    conference: [],
-    articles: [],
-    books: [],
-    patents: []
-  };
-
-  publications.forEach(pub => {
-    if (types[pub.publicationType]) {
-      types[pub.publicationType].push(pub);
-    } else {
-      types.articles.push(pub);
-    }
-  });
-
+  const groupedTypes = groupByType(publications || []); // Ensure publications is an array
   const totalPublications = publications.length;
 
   const doc = new Document({
@@ -47,7 +31,7 @@ async function generateSingleUserReport(userData, publications) {
             text: `Количество публикации сотрудника за весь период: ${totalPublications}`,
             alignment: AlignmentType.LEFT,
           }),
-          createMainTable(types)
+          createMainTable(groupedTypes) // Generate single table with grouped types
         ],
       },
     ],
@@ -68,12 +52,12 @@ async function generateSingleUserReport(userData, publications) {
   }
 }
 
-function createMainTable(types) {
+function createMainTable(groupedTypes) {
   const rows = [];
   let publicationIndex = 1;
 
-  Object.entries(types).forEach(([type, pubs]) => {
-    if (pubs.length > 0) {
+  Object.entries(groupedTypes).forEach(([type, pubs]) => {
+    if (Array.isArray(pubs) && pubs.length > 0) { // Ensure pubs is a non-empty array
       rows.push(
         new TableRow({
           children: [
@@ -85,18 +69,18 @@ function createMainTable(types) {
         })
       );
 
-      pubs.forEach((pub, index) => {
+      pubs.forEach((pub) => {
         rows.push(
           new TableRow({
             children: [
               new TableCell({ children: [new Paragraph((publicationIndex++).toString())] }),
-              new TableCell({ children: [new Paragraph(pub.title)] }),
+              new TableCell({ children: [new Paragraph(pub.title || 'N/A')] }),
               new TableCell({ children: [new Paragraph("Печатный")] }),
               new TableCell({ children: [new Paragraph(pub.output || 'N/A')] }),
               new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : 'N/A')] }),
               new TableCell({
                 children: [new Paragraph(
-                  Array.isArray(pub.authors) ? (pub.authors.length > 0 ? pub.authors.join(', ') : 'N/A') : pub.authors || 'N/A'
+                  Array.isArray(pub.authors) ? pub.authors.join(', ') : (pub.authors || 'N/A')
                 )]
               }),
             ],
@@ -209,74 +193,89 @@ async function generateAllPublicationsReport(publicationsByUser) {
   }
 }
 
-function createMainTable(publicationsByUser) {
-  const rows = [];
-  let publicationIndex = 1;
-
-  Object.values(publicationsByUser).forEach((userData) => {
-    const { publications } = userData;
-    const groupedByType = groupByType(publications);
-
-    Object.entries(groupedByType).forEach(([type, pubs]) => {
-      if (pubs.length > 0) {
-        rows.push(
-          new TableRow({
-            children: [
-              new TableCell({
-                children: [new Paragraph({ text: getTypeTitle(type), alignment: AlignmentType.CENTER, italics: true })],
-                columnSpan: 6,
-              }),
-            ],
-          })
-        );
-
-        pubs.forEach((pub, index) => {
+function createMainTable(groupedTypes) {
+    const rows = [];
+    let publicationIndex = 1;
+  
+    // Check if there are any publications across all types
+    const hasPublications = Object.values(groupedTypes).some(pubs => Array.isArray(pubs) && pubs.length > 0);
+  
+    if (!hasPublications) {
+      // Add a fallback row if no publications exist
+      rows.push(
+        new TableRow({
+          children: [
+            new TableCell({
+              children: [new Paragraph({ text: "Нет публикаций для отображения", alignment: AlignmentType.CENTER })],
+              columnSpan: 6,
+            }),
+          ],
+        })
+      );
+    } else {
+      // Process each type if there are publications
+      Object.entries(groupedTypes).forEach(([type, pubs]) => {
+        if (Array.isArray(pubs) && pubs.length > 0) {
           rows.push(
             new TableRow({
               children: [
-                new TableCell({ children: [new Paragraph((publicationIndex++).toString())] }),
-                new TableCell({ children: [new Paragraph(pub.title || 'N/A')] }),
-                new TableCell({ children: [new Paragraph("Печатный")] }),
-                new TableCell({ children: [new Paragraph(pub.output || 'N/A')] }),
-                new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : 'N/A')] }),
                 new TableCell({
-                  children: [new Paragraph(
-                    Array.isArray(pub.authors) ? pub.authors.join(', ') : (pub.authors || 'N/A')
-                  )]
-                })
+                  children: [new Paragraph({ text: getTypeTitle(type), alignment: AlignmentType.CENTER, italics: true })],
+                  columnSpan: 6,
+                }),
               ],
             })
           );
-        });
-      }
-    });
-  });
-
-  return new Table({ rows });
-}
+  
+          pubs.forEach((pub) => {
+            rows.push(
+              new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph((publicationIndex++).toString())] }),
+                  new TableCell({ children: [new Paragraph(pub.title || 'N/A')] }),
+                  new TableCell({ children: [new Paragraph("Печатный")] }),
+                  new TableCell({ children: [new Paragraph(pub.output || 'N/A')] }),
+                  new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : 'N/A')] }),
+                  new TableCell({
+                    children: [new Paragraph(
+                      Array.isArray(pub.authors) ? pub.authors.join(', ') : (pub.authors || 'N/A')
+                    )]
+                  }),
+                ],
+              })
+            );
+          });
+        }
+      });
+    }
+  
+    return new Table({ rows });
+  }
 
 function groupByType(publications) {
-  const grouped = {
-    koknvo: [],
-    scopus_wos: [],
-    conference: [],
-    articles: [],
-    books: [],
-    patents: [],
-  };
-
-  publications.forEach(pub => {
-    if (grouped[pub.publicationType]) {
-      grouped[pub.publicationType].push(pub);
-    } else {
-      grouped.articles.push(pub);
+    const grouped = {
+      koknvo: [],
+      scopus_wos: [],
+      conference: [],
+      articles: [],
+      books: [],
+      patents: [],
+    };
+  
+    if (Array.isArray(publications)) {
+      publications.forEach(pub => {
+        if (grouped[pub.publicationType]) {
+          grouped[pub.publicationType].push(pub);
+        } else {
+          grouped.articles.push(pub); // Default to 'articles' if no specific type is found
+        }
+      });
     }
-  });
-
-  return grouped;
-}
-
-function getTypeTitle(type) {
+  
+    return grouped;
+  }
+  
+  function getTypeTitle(type) {
     const titles = {
       koknvo: "КОКНВО",
       scopus_wos: "Статьи в базе данных Scopus/WoS",
@@ -287,4 +286,5 @@ function getTypeTitle(type) {
     };
     return titles[type] || "Другие публикации";
   }
+  
 module.exports = { generateSingleUserReport, generateAllPublicationsReport };
