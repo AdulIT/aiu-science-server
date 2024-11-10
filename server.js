@@ -25,10 +25,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // app.use(cors());
-app.use(cors({
-  origin: 'http://localhost:3000', // Add the frontend origin here
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)
@@ -355,11 +359,9 @@ app.post('/api/admin/generateAllPublicationsReport', verifyToken, async (req, re
     const filePath = await generateAllPublicationsReport(publicationsByUser);
 
     if (fs.existsSync(filePath)) {
-      // Устанавливаем заголовки для скачивания файла
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename=all_publications_${new Date().getFullYear()}.docx`);
       
-      // Передача файла в ответе
       res.download(filePath, (err) => {
         if (err) {
           console.error('Error sending file:', err);
@@ -429,14 +431,12 @@ app.get('/api/user/downloadResumePdf', (req, res) => {
   }
 });
 
-
-
 app.get('/api/user/downloadResumePdf', (req, res) => {
-  const filePath = path.resolve(req.query.path); // Resolve the absolute file path
+  const filePath = path.resolve(req.query.path);
   if (fs.existsSync(filePath)) {
-    const fileName = encodeURIComponent(path.basename(filePath)); // URL-encode the file name
+    const fileName = encodeURIComponent(path.basename(filePath));
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`); // Ensure the filename is safe
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.download(filePath);
   } else {
     res.status(404).json({ message: 'File not found' });
@@ -444,56 +444,20 @@ app.get('/api/user/downloadResumePdf', (req, res) => {
 });
 
 app.get('/api/user/downloadResumeDocx', (req, res) => {
-  const filePath = path.resolve(req.query.path); // Resolve the absolute file path
+  const filePath = path.resolve(req.query.path);
   if (fs.existsSync(filePath)) {
-    const fileName = encodeURIComponent(path.basename(filePath)); // URL-encode the file name
+    const fileName = encodeURIComponent(path.basename(filePath));
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     console.log(fileName)
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`); // Ensure the filename is safe
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.download(filePath);
   } else {
     res.status(404).json({ message: 'File not found' });
   }
 });
 
-// app.get('/api/user/:iin', verifyToken, async (req, res) => {
-//   const { iin } = req.params;
-
-//   try {
-//     const user = await User.findOne({ iin });
-
-//     if (!user) {
-//       return res.status(404).json({ message: 'Пользователь не найден' });
-//     }
-
-//     res.status(200).json({
-//       iin: user.iin,
-//       fullName: user.fullName,
-//       email: user.email,
-//       phone: user.phone,
-//       researchArea: user.researchArea,
-//       higherSchool: user.higherSchool,
-//       role: user.role
-//     });
-//   } catch (error) {
-//     console.error('Ошибка при получении пользователя:', error);
-//     res.status(500).json({ message: 'Ошибка сервера' });
-//   }
-// });
-
 module.exports = router;
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-// const bcrypt = require('bcryptjs');
-// bcrypt.hash('840915301433admin!', 10).then(console.log);
-
-// $2a$10$B7.dZMGyAzLosAS/kiooYu58aIRqMCwszlodn5KARx2Rr5Xwf18Wq
-
-// {
-// 	"iin": "840915301433",
-// 	"password": "840915301433admin!",
-// 	"role": "admin"
-// }
