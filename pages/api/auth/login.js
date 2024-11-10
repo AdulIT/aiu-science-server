@@ -40,3 +40,40 @@ export default async function handler(req, res) {
     res.status(500).json({ message: 'Произошла ошибка на сервере. Попробуйте позже.' });
   }
 }
+
+// app.post('/api/auth/login', async (req, res) => {
+//   const { iin, password } = req.body;
+//   console.log("Received a request at /api/auth/login");
+
+
+//   try {
+//     const user = await User.findOne({ iin });
+//     if (!user) {
+//       return res.status(401).json({ success: false, message: 'User not found' });
+//     }
+
+//     const isPasswordValid = await bcrypt.compare(password, user.password);
+//     if (!isPasswordValid) {
+//       return res.status(401).json({ success: false, message: 'Invalid password' });
+//     }
+
+//     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
+//     const accessToken = jwt.sign(
+//       { iin: user.iin, role: user.role },
+//       secretKey,
+//       { expiresIn: '15m' }
+//     );
+
+//     const refreshSecret = process.env.JWT_REFRESH_SECRET || 'defaultRefreshSecret';
+//     const refreshToken = jwt.sign(
+//       { iin: user.iin },
+//       refreshSecret,
+//       { expiresIn: '7d' }
+//     );
+
+//     res.status(200).json({ success: true, accessToken, refreshToken });
+//   } catch (error) {
+//     console.error('Error during user login:', error);
+//     res.status(500).json({ message: 'Server error. Please try again later.' });
+//   }
+// });
