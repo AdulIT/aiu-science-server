@@ -1,8 +1,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../../../models';
+import dbConnect from '../../../middleware/dbConnect';
+import corsMiddleware from '../../../middleware/corsMiddleware';
 
 export default async function handler(req, res) {
+  await corsMiddleware(req, res);
+  await dbConnect();
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Метод не разрешен' });
   }
