@@ -1,5 +1,7 @@
 {
   "scripts": {
+    "start": "npm start",
+    "build": "npm build",
     "deploy": "vercel --prod"
   },
   "description": "",
