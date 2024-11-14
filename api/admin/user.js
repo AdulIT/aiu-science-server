@@ -1,11 +1,9 @@
-import { User } from '../../../models';
-import { verifyToken, authenticateAdmin } from '../../../middleware/auth';
-import dbConnect from '../../../middleware/dbConnect';
-import corsMiddleware from '../../../middleware/corsMiddleware';
+const { User } = require('../../models');
+const { verifyToken, authenticateAdmin } = require('../../middleware/auth');
 
-export default async function handler(req, res) {
-  await corsMiddleware(req, res);
-  await dbConnect();
+module.exports = async function handler(req, res) {
+  // await corsMiddleware(req, res);
+  // await dbConnect();
   
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method Not Allowed' });

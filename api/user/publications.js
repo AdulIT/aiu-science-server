@@ -1,11 +1,8 @@
-// api/user/publications.js
-import dbConnect from '../../../middleware/dbConnect';
-import corsMiddleware from '../../../middleware/corsMiddleware';
-import { Publication } from '../../../models';
+const { Publication } = require('../../models');
 
-export default async function handler(req, res) {
-  await corsMiddleware(req, res);
-  await dbConnect();
+module.exports = async function handler(req, res) {
+  // await corsMiddleware(req, res);
+  // await dbConnect();
   
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method Not Allowed' });

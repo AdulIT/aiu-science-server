@@ -1,12 +1,10 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { User } from '../../../models';
-import dbConnect from '../../../middleware/dbConnect';
-import corsMiddleware from '../../../middleware/corsMiddleware';
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { User } = require('../../models');
 
-export default async function handler(req, res) {
-  await corsMiddleware(req, res);
-  await dbConnect();
+module.exports = async function handler(req, res) {
+  // await corsMiddleware(req, res);
+  // await dbConnect();
 
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });

@@ -1,14 +1,11 @@
-import { User, Publication } from '../../../models';
-import { generateSingleUserReport } from '../../../services/reportGenerator';
-import { verifyToken } from '../../../middleware/auth';
+const { User, Publication } = require('../../models');
+const { generateSingleUserReport } = require('../../services/reportGenerator');
+const { verifyToken } = require('../../middleware/auth');
 const fs = require('fs');
-import dbConnect from '../../../middleware/dbConnect';
-import corsMiddleware from '../../../middleware/corsMiddleware';
 
-
-export default async function handler(req, res) {
-  await corsMiddleware(req, res);
-  await dbConnect();
+module.exports = async function handler(req, res) {
+  // await corsMiddleware(req, res);
+  // await dbConnect();
   
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });

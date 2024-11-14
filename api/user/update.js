@@ -1,11 +1,9 @@
-import { User } from '../../../models'; // Импортируем модель User
-import jwt from 'jsonwebtoken';
-import dbConnect from '../../../middleware/dbConnect';
-import corsMiddleware from '../../../middleware/corsMiddleware';
+const { User } = require('../../models');
+const jwt = require('jsonwebtoken');
 
-export default async function handler(req, res) {
-  await corsMiddleware(req, res);
-  await dbConnect();
+module.exports = async function handler(req, res) {
+  // await corsMiddleware(req, res);
+  // await dbConnect();
   
   console.log('Запрос на обновление информации получен');
 

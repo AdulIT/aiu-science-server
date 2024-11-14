@@ -1,10 +1,8 @@
-import { User } from '../../../models'; // Импортируем модель User
-import jwt from 'jsonwebtoken';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import dbConnect from '../../../middleware/dbConnect';
-import corsMiddleware from '../../../middleware/corsMiddleware';
+const { User } = require('../../models'); // Импортируем модель User
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // Настройка multer для сохранения файлов
 const storage = multer.diskStorage({
@@ -24,15 +22,15 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Конфигурация Next.js для отключения bodyParser
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// export const config = {
+//   api: {
+//     bodyParser: false,
+//   },
+// };
 
-export default async function handler(req, res) {
-  await corsMiddleware(req, res);
-  await dbConnect();
+module.exports = async function handler(req, res) {
+  // await corsMiddleware(req, res);
+  // await dbConnect();
   
   console.log('Запрос на загрузку фотографии получен');
 

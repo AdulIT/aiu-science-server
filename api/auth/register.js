@@ -1,11 +1,9 @@
-import bcrypt from 'bcryptjs';
-import { User } from '../../../models';
-import dbConnect from '../../../middleware/dbConnect';
-import corsMiddleware from '../../../middleware/corsMiddleware';
+const bcrypt = require('bcryptjs');
+const { User } = require('../../models');
 
-export default async function handler(req, res) {
-  await corsMiddleware(req, res);
-  await dbConnect();
+module.exports = async function handler(req, res) {
+  // await corsMiddleware(req, res);
+  // await dbConnect();
   
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Метод не разрешен' });
