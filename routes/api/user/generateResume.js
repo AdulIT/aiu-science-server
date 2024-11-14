@@ -2,8 +2,13 @@ import { User } from '../../../models';
 import Publication from '../../../models/Publication';
 import { generateUserResume, generateUserResumePDF } from '../../../services/resumeGenerator';
 import verifyToken from '../../../middleware/auth';
+import dbConnect from '../../../middleware/dbConnect';
+import corsMiddleware from '../../../middleware/corsMiddleware';
 
 export default async function handler(req, res) {
+  await corsMiddleware(req, res);
+  await dbConnect();
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }

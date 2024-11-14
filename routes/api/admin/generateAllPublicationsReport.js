@@ -2,8 +2,13 @@ import { User, Publication } from '../../../models';
 import { generateAllPublicationsReport } from '../../../services/reportGenerator';
 import { verifyToken } from '../../../middleware/auth';
 import fs from 'fs';
+import dbConnect from '../../../middleware/dbConnect';
+import corsMiddleware from '../../../middleware/corsMiddleware';
 
 export default async function handler(req, res) {
+  await corsMiddleware(req, res);
+  await dbConnect();
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }

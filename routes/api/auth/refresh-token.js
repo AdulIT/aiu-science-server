@@ -1,7 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../../../models/index');
+import dbConnect from '../../../middleware/dbConnect';
+import corsMiddleware from '../../../middleware/corsMiddleware';
 
 module.exports = async function handler(req, res) {
+  await corsMiddleware(req, res);
+  await dbConnect();
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Метод не разрешен' });
   }

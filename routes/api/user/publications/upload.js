@@ -2,6 +2,8 @@ const multer = require('multer');
 const path = require('path');
 const { verifyToken, authenticateUser } = require('../../../middleware/auth');
 const Publication = require('../../../models/Publication');
+import dbConnect from '../../../middleware/dbConnect';
+import corsMiddleware from '../../../middleware/corsMiddleware';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -25,6 +27,9 @@ const upload = multer({
 });
 
 module.exports = async (req, res) => {
+  await corsMiddleware(req, res);
+  await dbConnect();
+
   if (req.method === 'POST') {
     try {
       await verifyToken(req, res);

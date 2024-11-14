@@ -1,7 +1,12 @@
 import { User } from '../../../models'; // Импортируем модель User
 import jwt from 'jsonwebtoken';
+import dbConnect from '../../../middleware/dbConnect';
+import corsMiddleware from '../../../middleware/corsMiddleware';
 
 export default async function handler(req, res) {
+  await corsMiddleware(req, res);
+  await dbConnect();
+  
   console.log('Запрос на обновление информации получен');
 
   if (req.method !== 'PUT') {
