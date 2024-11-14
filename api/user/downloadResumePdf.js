@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import dbConnect from '../../../middleware/dbConnect';
-import corsMiddleware from '../../../middleware/corsMiddleware';
+import dbConnect from '../../middleware/dbConnect';
+import corsMiddleware from '../../middleware/corsMiddleware';
 
 export default async function handler(req, res) {
   await corsMiddleware(req, res);
