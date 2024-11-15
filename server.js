@@ -4,29 +4,29 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 
 // auth
-const authLogin = require('./api/auth/login')
-const authRegister = require('./api/auth/register')
-const authRefreshToken = require('./api/auth/register')
+const authLogin = require('./pages/api/auth/login')
+const authRegister = require('./pages/api/auth/register')
+const authRefreshToken = require('./pages/api/auth/register')
 
 // admin
-const adminCreate = require('./api/admin/create')
-const adminGenerateAllPublicationsReport = require('./api/admin/generateAllPublicationsReport')
-const adminGenerateUserReport = require('./api/admin/generateUserReport')
-const adminPublications = require('./api/admin/publications')
-const adminUser = require('./api/admin/user')
-const adminUsers = require('./api/admin/users')
+const adminCreate = require('./pages/api/admin/create')
+const adminGenerateAllPublicationsReport = require('./pages/api/admin/generateAllPublicationsReport')
+const adminGenerateUserReport = require('./pages/api/admin/generateUserReport')
+const adminPublications = require('./pages/api/admin/publications')
+const adminUser = require('./pages/api/admin/user')
+const adminUsers = require('./pages/api/admin/users')
 
 // user
-const userDownloadResumeDocx = require('./api/user/downloadResumeDocx')
-const userDownloadResumePdf = require('./api/user/downloadResumePdf')
-const userGenerateResume = require('./api/user/generateResume')
-const userProfile = require('./api/user/profile')
-const userPublications = require('./api/user/publications')
-const userUpdate = require('./api/user/update')
-const userUploadPhoto = require('./api/user/uploadPhoto')
+const userDownloadResumeDocx = require('./pages/api/user/downloadResumeDocx')
+const userDownloadResumePdf = require('./pages/api/user/downloadResumePdf')
+const userGenerateResume = require('./pages/api/user/generateResume')
+const userProfile = require('./pages/api/user/profile')
+const userPublications = require('./pages/api/user/publications')
+const userUpdate = require('./pages/api/user/update')
+const userUploadPhoto = require('./pages/api/user/uploadPhoto')
 
 // user/publications
-const userPublicationsUpload = require('./api/user/publications/upload')
+const userPublicationsUpload = require('./pages/api/user/publications/upload')
 
 dotenv.config();
 
@@ -56,7 +56,7 @@ app.use('/api/admin/create', adminCreate);
 app.use('/api/admin/generateAllPublicationsReport', adminGenerateAllPublicationsReport);
 app.use('/api/admin/generateUserReport', adminGenerateUserReport);
 app.use('/api/admin/publications', adminPublications);
-app.use('/api/admin/user', adminUser);
+app.use('/api/admin/user/:iin', adminUser);
 app.use('/api/admin/users', adminUsers);
 
 // user

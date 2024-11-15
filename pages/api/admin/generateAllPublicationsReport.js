@@ -1,6 +1,6 @@
-const { User, Publication } = require('../../models');
-const { generateAllPublicationsReport } = require('../../services/reportGenerator');
-const { verifyToken } = require('../../middleware/auth');
+const { User, Publication } = require('../../../models');
+const { generateAllPublicationsReport } = require('../../../services/reportGenerator');
+const { verifyToken } = require('../../../middleware/auth');
 const fs = require('fs');
 
 module.exports = async function handler(req, res) {

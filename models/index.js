@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
-// Подключение к базе данных MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Успешное подключение к MongoDB'))
-  .catch((error) => console.error('Ошибка подключения к MongoDB:', error));
+// // Подключение к базе данных MongoDB
+// mongoose.connect(process.env.MONGO_URI)
+//   .then(() => console.log('Успешное подключение к MongoDB'))
+//   .catch((error) => console.error('Ошибка подключения к MongoDB:', error));
 
 // Определение модели пользователя
 const userSchema = new mongoose.Schema({

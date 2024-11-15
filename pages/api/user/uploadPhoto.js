@@ -1,4 +1,4 @@
-const { User } = require('../../models'); // Импортируем модель User
+const { User } = require('../../../models'); // Импортируем модель User
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');

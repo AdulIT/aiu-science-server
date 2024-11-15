@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
-const { verifyToken, authenticateUser } = require('../../../middleware/auth');
-const Publication = require('../../../models/Publication');
+const { verifyToken, authenticateUser } = require('../../../../middleware/auth');
+const Publication = require('../../../../models/Publication');
 // import dbConnect from '../../../middleware/dbConnect';
 // import corsMiddleware from '../../../middleware/corsMiddleware';
 

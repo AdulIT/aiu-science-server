@@ -1,13 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User } = require('../../models');
+const { User } = require('../../../models');
 // const dbConnect = require('../../middleware/dbConnect');
 // const corsMiddleware = require('../../middleware/corsMiddleware');
 
 module.exports = async function handler(req, res) {
   // await corsMiddleware(req, res);
   // await dbConnect();
-
+  console.log("Request method:", req.method);
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Метод не разрешен' });
   }

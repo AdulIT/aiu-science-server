@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User } = require('../../models');
+const { User } = require('../../../models');
 
 module.exports = async function handler(req, res) {
   // await corsMiddleware(req, res);

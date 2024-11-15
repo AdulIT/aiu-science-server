@@ -1,7 +1,7 @@
-const { User } = require('../..//models');
-const Publication = require('../../models/Publication');
-const { generateUserResume, generateUserResumePDF } = require('../../services/resumeGenerator');
-const verifyToken = require('../../middleware/auth');
+const { User } = require('../../../models');
+const Publication = require('../../../models/Publication');
+const { generateUserResume, generateUserResumePDF } = require('../../../services/resumeGenerator');
+const verifyToken = require('../../../middleware/auth');
 
 module.exports = async function handler(req, res) {
   // await corsMiddleware(req, res);

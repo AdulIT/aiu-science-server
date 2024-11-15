@@ -1,4 +1,4 @@
-const { Publication } = require('../../models');
+const { Publication } = require('../../../models');
 
 module.exports = async function handler(req, res) {
   // await corsMiddleware(req, res);

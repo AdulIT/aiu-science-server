@@ -9,8 +9,8 @@ function verifyToken(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultSecretKey');
-    req.user = decoded;
-    next();
+    req.user = decoded; // Добавляем декодированного пользователя в запрос
+    return next(); // Переход к следующему middleware
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Токен истек', error });
@@ -21,18 +21,18 @@ function verifyToken(req, res, next) {
 
 // Аутентификация обычного пользователя
 function authenticateUser(req, res, next) {
-  if (req.user.role !== 'user') {
+  if (!req.user || req.user.role !== 'user') {
     return res.status(403).json({ message: 'Доступ запрещен' });
   }
-  next();
+  return next(); // Переход к следующему middleware
 }
 
 // Аутентификация администратора
 function authenticateAdmin(req, res, next) {
-  if (req.user.role !== 'admin') {
+  if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Доступ запрещен' });
   }
-  next();
+  return next(); // Переход к следующему middleware
 }
 
 module.exports = {
