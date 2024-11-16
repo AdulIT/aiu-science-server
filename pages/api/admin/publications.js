@@ -1,4 +1,4 @@
-const { Publication } = require('../../../models/Publication');
+const Publication = require('../../../models/Publication');
 const { verifyToken, authenticateAdmin } = require('../../../middleware/auth');
 
 module.exports = async function handler(req, res) {

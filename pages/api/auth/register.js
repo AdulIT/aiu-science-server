@@ -11,6 +11,11 @@ module.exports = async function handler(req, res) {
 
   const { iin, password, role = 'user' } = req.body;
 
+  // Проверка наличия обязательных данных
+  if (!iin || !password) {
+    return res.status(400).json({ message: 'IIN и пароль обязательны' });
+  }
+  
   try {
     const existingUser = await User.findOne({ iin });
     if (existingUser) {

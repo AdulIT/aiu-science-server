@@ -1,19 +1,23 @@
-const { User, Publication } = require('../../../models');
+const { User } = require('../../../models');
+const Publication = require('../../../models/Publication');
 const { generateAllPublicationsReport } = require('../../../services/reportGenerator');
 const { verifyToken } = require('../../../middleware/auth');
 const fs = require('fs');
 
 module.exports = async function handler(req, res) {
-  // await corsMiddleware(req, res);
-  // await dbConnect();
-  
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
+  // Применяем verifyToken как middleware
   try {
-    await verifyToken(req, res);
+    await new Promise((resolve, reject) => verifyToken(req, res, (err) => (err ? reject(err) : resolve())));
+  } catch (error) {
+    console.error('Token verification failed:', error.message);
+    return; // Завершаем обработку, если верификация не прошла
+  }
 
+  try {
     const publicationsByUser = {};
     const users = await User.find({});
   
