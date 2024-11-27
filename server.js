@@ -90,3 +90,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// const bcrypt = require('bcryptjs');
+// bcrypt.hash('', 10).then(console.log);
