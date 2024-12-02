@@ -5,7 +5,7 @@ module.exports = async function handler(req, res) {
   // await corsMiddleware(req, res);
   // await dbConnect();
   
-  console.log('Запрос на обновление информации получен');
+  // console.log('Запрос на обновление информации получен');
 
   if (req.method !== 'PUT') {
     console.error('Метод не разрешен');
@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
     const decoded = jwt.verify(token, secretKey);
     const iin = decoded.iin;
 
-    console.log('Токен успешно верифицирован. ИИН:', iin);
+    // console.log('Токен успешно верифицирован. ИИН:', iin);
 
     const user = await User.findOne({ iin });
     if (!user) {
@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
     }
 
     const { fullName, scopusId, wosId, orcid, birthDate, phone, email, researchArea, higherSchool } = req.body;
-    console.log('Данные для обновления:', req.body);
+    // console.log('Данные для обновления:', req.body);
 
     user.fullName = fullName || user.fullName;
     user.scopusId = scopusId || user.scopusId;

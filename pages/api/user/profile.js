@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
       const decoded = jwt.verify(token, secretKey);
       const iin = decoded.iin;
   
-      console.log('Токен успешно верифицирован. ИИН:', iin);
+      // console.log('Токен успешно верифицирован. ИИН:', iin);
   
       const user = await User.findOne({ iin }).select('-password');
       if (!user) {
@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
         return res.status(404).json({ message: 'Пользователь не найден' });
       }
   
-      console.log('Данные пользователя найдены:', user);
+      // console.log('Данные пользователя найдены:', user);
       res.status(200).json(user);
     } catch (error) {
       console.error('Ошибка при получении данных пользователя:', error);

@@ -4,9 +4,9 @@ module.exports = async function handler(req, res) {
   // await corsMiddleware(req, res);
   // await dbConnect();
   
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
-  }
+  // if (req.method !== 'GET') {
+  //   return res.status(405).json({ message: 'Method Not Allowed' });
+  // }
 
   const { iin } = req.params; // use req.query instead of req.params for serverless functions
 

@@ -32,7 +32,7 @@ module.exports = async function handler(req, res) {
   // await corsMiddleware(req, res);
   // await dbConnect();
   
-  console.log('Запрос на загрузку фотографии получен');
+  // console.log('Запрос на загрузку фотографии получен');
 
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Метод не разрешен' });
@@ -51,7 +51,7 @@ module.exports = async function handler(req, res) {
     const decoded = jwt.verify(token, secretKey);
     const iin = decoded.iin;
 
-    console.log('Токен успешно верифицирован. ИИН:', iin);
+    // console.log('Токен успешно верифицирован. ИИН:', iin);
 
     // Используем multer для обработки загрузки файла
     upload.single('profilePhoto')(req, res, async (err) => {
@@ -65,7 +65,7 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ message: 'Файл не был загружен' });
       }
 
-      console.log('Файл успешно загружен:', req.file.filename);
+      // console.log('Файл успешно загружен:', req.file.filename);
       const filePath = `/uploads/${req.file.filename}`;
 
       // Найти пользователя и обновить URL фотографии
@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
       user.profilePhoto = filePath;
       await user.save();
 
-      console.log('Фотография успешно сохранена в базе данных');
+      // console.log('Фотография успешно сохранена в базе данных');
       res.status(200).json({ message: 'Фотография успешно загружена', profilePhoto: filePath });
     });
   } catch (error) {

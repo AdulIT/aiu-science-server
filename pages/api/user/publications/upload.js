@@ -56,6 +56,8 @@ module.exports = async (req, res) => {
         });
 
         const savedPublication = await newPublication.save();
+        console.log('Saved publication:', savedPublication);
+
         res.status(201).json(savedPublication);
       });
     } catch (error) {
