@@ -70,7 +70,7 @@ app.use('/api/user/downloadResumeDocx', userDownloadResumeDocx);
 app.use('/api/user/downloadResumePdf', userDownloadResumePdf);
 app.use('/api/user/generateResume', userGenerateResume);
 app.use('/api/user/profile', userProfile);
-app.use('/api/user/:iin/publications', userPublications);
+app.use('/api/user/publications', userPublications);
 app.use('/api/user/update', userUpdate);
 app.use('/api/user/uploadPhoto', userUploadPhoto);
 

@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   //   return res.status(405).json({ message: 'Method Not Allowed' });
   // }
 
-  const { iin } = req.params; // use req.query instead of req.params for serverless functions
+  const { iin } = req.query; // use req.query instead of req.params for serverless functions
 
   try {
     const publications = await Publication.find({ iin });
