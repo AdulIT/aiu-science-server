@@ -23,16 +23,19 @@ const userDownloadResumeDocx = require('./pages/api/user/downloadResumeDocx');
 const userDownloadResumePdf = require('./pages/api/user/downloadResumePdf');
 const userGenerateResume = require('./pages/api/user/generateResume');
 const userProfile = require('./pages/api/user/profile');
-const userPublications = require('./pages/api/user/publications');
+const userPublications = require('./pages/api/user/getPublications');
 const userUpdate = require('./pages/api/user/update');
 const userUploadPhoto = require('./pages/api/user/uploadPhoto');
 
 // user/publications
-const userPublicationsUpload = require('./pages/api/user/publications/upload');
+const userPublicationsUpload = require('./pages/api/user/upload');
 
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(morgan('combined'));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
@@ -40,19 +43,13 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [process.env.LOCAL_ORIGIN, process.env.PRODUCTION_ORIGIN].filter(Boolean);
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
-
-app.all('*', (req, res, next) => {
-  console.log("Request received:", req.method, req.url);
-  next();
-});
 
 // Import routes
 app.use('/api/auth/login', authLogin);
@@ -70,11 +67,13 @@ app.use('/api/user/downloadResumeDocx', userDownloadResumeDocx);
 app.use('/api/user/downloadResumePdf', userDownloadResumePdf);
 app.use('/api/user/generateResume', userGenerateResume);
 app.use('/api/user/profile', userProfile);
-app.use('/api/user/publications', userPublications);
+app.use('/api/user/getPublications', userPublications);
 app.use('/api/user/update', userUpdate);
 app.use('/api/user/uploadPhoto', userUploadPhoto);
 
-app.use('/api/user/publications/upload', userPublicationsUpload);
+// app.use('/api/user/publications/upload', userPublicationsUpload);
+app.use('/api/user', userPublicationsUpload);
+
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -89,6 +88,11 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+
+app.all('*', (req, res, next) => {
+  // console.log("Request received:", req.method, req.url);
+  next();
 });
 
 // const bcrypt = require('bcryptjs');

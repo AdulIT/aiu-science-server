@@ -6,7 +6,7 @@ const publicationSchema = new mongoose.Schema({
     required: true,
   },
   authors: {
-    type: String,
+    type: [String],
     required: true,
   },
   title: {

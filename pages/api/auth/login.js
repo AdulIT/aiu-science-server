@@ -7,7 +7,7 @@ const { User } = require('../../../models');
 module.exports = async function handler(req, res) {
   // await corsMiddleware(req, res);
   // await dbConnect();
-  console.log("Request method:", req.method);
+  // console.log("Request method:", req.method);
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Метод не разрешен' });
   }
