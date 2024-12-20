@@ -49,6 +49,7 @@ const publicationSchema = new mongoose.Schema({
     ],
     required: true,
   },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 });
 
 const Publication = mongoose.model('Publication', publicationSchema);
