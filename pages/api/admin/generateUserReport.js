@@ -31,9 +31,10 @@ module.exports = async function handler(req, res) {
     }
 
     const filePath = await generateSingleUserReport(user, publications);
-    const sanitizedFileName = `${user.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_work_list.docx`;
+    const sanitizedFileName = user.fullName
+                              ? `${user.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_work_list.docx`
+                              : `unknown_user_work_list.docx`;
 
-    // Используем поток для передачи файла
     const fileStream = fs.createReadStream(filePath);
 
     fileStream.on('error', (err) => {
