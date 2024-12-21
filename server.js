@@ -26,6 +26,7 @@ const userProfile = require('./pages/api/user/profile');
 const userPublications = require('./pages/api/user/getPublications');
 const userUpdate = require('./pages/api/user/update');
 const userUploadPhoto = require('./pages/api/user/uploadPhoto');
+const userEditPublication = require('./pages/api/user/editPublication');
 
 // user/publications
 const userPublicationsUpload = require('./pages/api/user/upload');
@@ -70,6 +71,7 @@ app.use('/api/user/profile', userProfile);
 app.use('/api/user/getPublications', userPublications);
 app.use('/api/user/update', userUpdate);
 app.use('/api/user/uploadPhoto', userUploadPhoto);
+app.use('/api/user/editPublication/:id', userEditPublication);
 
 // app.use('/api/user/publications/upload', userPublicationsUpload);
 app.use('/api/user', userPublicationsUpload);
