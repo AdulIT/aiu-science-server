@@ -17,6 +17,7 @@ const adminGenerateUserReport = require('./pages/api/admin/generateUserReport');
 const adminPublications = require('./pages/api/admin/publications');
 const adminUser = require('./pages/api/admin/user');
 const adminUsers = require('./pages/api/admin/users');
+const adminCalculateStatistics = require('./pages/api/admin/statistics');
 
 // user
 const userDownloadResumeDocx = require('./pages/api/user/downloadResumeDocx');
@@ -63,6 +64,7 @@ app.use('/api/admin/generateUserReport', adminGenerateUserReport);
 app.use('/api/admin/publications', adminPublications);
 app.use('/api/admin/user/:iin', adminUser);
 app.use('/api/admin/users', adminUsers);
+app.use('/api/admin/statistics', adminCalculateStatistics);
 
 app.use('/api/user/downloadResumeDocx', userDownloadResumeDocx);
 app.use('/api/user/downloadResumePdf', userDownloadResumePdf);
