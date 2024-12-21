@@ -277,12 +277,12 @@ function groupByType(publications) {
   
   function getTypeTitle(type) {
     const titles = {
-      koknvo: "КОКНВО",
-      scopus_wos: "Статьи в базе данных Scopus/WoS",
-      conference: "Материалы конференций",
-      articles: "Другие статьи",
-      books: "Книги",
-      patents: "Патенты",
+      koknvo: "Научные статьи в журналах КОКНВО",
+      scopus_wos: "Публикации Scopus и Web of Science",
+      conference: "Публикации в материалах конференций",
+      articles: "Научные статьи в периодических изданиях",
+      books: "Монографии, учебные пособия и другие книги",
+      patents: "Патенты, авторские свидетельства и другие охранные документы",
     };
     return titles[type] || "Другие публикации";
   }
