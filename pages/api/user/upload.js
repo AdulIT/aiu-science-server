@@ -1,10 +1,17 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { verifyToken, authenticateUser } = require('../../../middleware/auth');
 const Publication = require('../../../models/Publication');
 
 const router = express.Router();
+
+const uploadDir = path.join(__dirname, '../../../public/uploads/publications');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log(`Директория создана: ${uploadDir}`);
+}
 
 // Настройка multer
 const storage = multer.diskStorage({
