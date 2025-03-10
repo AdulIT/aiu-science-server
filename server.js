@@ -91,6 +91,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
