@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
 
     const secretKey = process.env.JWT_SECRET || 'defaultSecretKey';
     const accessToken = jwt.sign(
-      { iin: user.iin, role: user.role }, 
+      { iin: user.iin, role: user.role, id:user._id }, 
       secretKey, 
       { expiresIn: '1h' }
     );

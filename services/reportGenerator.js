@@ -1,3 +1,4 @@
+const { Console } = require('console');
 const { Document, Packer, Paragraph, Table, TableRow, TableCell, HeadingLevel, AlignmentType, Italic } = require('docx');
 const fs = require('fs');
 const path = require('path');
@@ -55,6 +56,8 @@ async function generateSingleUserReport(userData, publications) {
 function createMainTable(groupedTypes) {
   const rows = [];
   let publicationIndex = 1;
+  console.log(1)
+
 
   Object.entries(groupedTypes).forEach(([type, pubs]) => {
     if (Array.isArray(pubs) && pubs.length > 0) { // Ensure pubs is a non-empty array
@@ -102,8 +105,10 @@ async function generateAllPublicationsReport(publicationsByUser) {
   Object.values(publicationsByUser).forEach((userData) => {
     const { publications, user } = userData;
 
-    publications.forEach((pub) => {
-      if (!typeStats[pub.publicationType]) typeStats[pub.publicationType] = 0;
+    publications.filter(pub => !!pub.publicationType).forEach((pub) => {
+      if (!typeStats[pub.publicationType]) {
+        typeStats[pub.publicationType] = 0
+      };
       typeStats[pub.publicationType] += 1;
     });
 
@@ -113,13 +118,14 @@ async function generateAllPublicationsReport(publicationsByUser) {
       schoolStats[user.higherSchool][pub.publicationType] += 1;
     });
   });
-
-  const typeStatsParagraphs = Object.entries(typeStats).map(([type, count]) => (
-    new Paragraph({
+  
+  const typeStatsParagraphs = Object.entries(typeStats).map(([type, count]) => 
+    {
+      return new Paragraph({
       text: `${getTypeTitle(type)}: ${count}`,
       alignment: AlignmentType.LEFT,
-    })
-  ));
+    })}
+  );
 
   const schoolStatsParagraphs = [];
   Object.entries(schoolStats).forEach(([school, types]) => {
@@ -135,7 +141,7 @@ async function generateAllPublicationsReport(publicationsByUser) {
       }));
     });
   });
-
+// console.log(publicationsByUser)
   const doc = new Document({
     sections: [
       {
@@ -196,10 +202,11 @@ async function generateAllPublicationsReport(publicationsByUser) {
 function createMainTable(groupedTypes) {
     const rows = [];
     let publicationIndex = 1;
+    console.log(2)
   
     // Check if there are any publications across all types
-    const hasPublications = Object.values(groupedTypes).some(pubs => Array.isArray(pubs) && pubs.length > 0);
-  
+
+    const hasPublications = Object.values(groupedTypes).some(pubs => Array.isArray(pubs.publications) && pubs.publications.length > 0);
     if (!hasPublications) {
       // Add a fallback row if no publications exist
       rows.push(
@@ -213,26 +220,48 @@ function createMainTable(groupedTypes) {
         })
       );
     } else {
-      // Process each type if there are publications
-      Object.entries(groupedTypes).forEach(([type, pubs]) => {
+      const groupByType = {}
+      const allPubs = Object.entries(groupedTypes).map(([key, value]) => value.publications).flat()
+      allPubs.forEach((pub) => {
+        if (!groupByType[pub.publicationType]) {
+          groupByType[pub.publicationType] = []
+        };
+        groupByType[pub.publicationType].push(pub)
+      })
+      rows.push(
+        new TableRow({
+      
+          children: 
+          ['№', 'Название трудов', 'Характер работы','Выходные данные','Объем п.л.','Фамилии авторов'].map((title) => 
+          new TableCell({
+              children: [new Paragraph({ text: title, alignment: AlignmentType.CENTER, italics: true })],
+            }),
+          )
+        })
+      )
+      Object.entries(groupByType).sort(a => a[0] === undefined ? 1 : -1).forEach(([type, pubs]) => {
         if (Array.isArray(pubs) && pubs.length > 0) {
+
           rows.push(
             new TableRow({
-              children: [
-                new TableCell({
-                  children: [new Paragraph({ text: getTypeTitle(type), alignment: AlignmentType.CENTER, italics: true })],
-                  columnSpan: 6,
-                }),
-              ],
+          
+              children: 
+              [new TableCell({
+                children: [new Paragraph({ text: getTypeTitle(type), alignment: AlignmentType.CENTER, italics: true })],
+                columnSpan: 6
+              })]
+              
+              
             })
-          );
+          )
+          
   
           pubs.forEach((pub) => {
             rows.push(
               new TableRow({
                 children: [
                   new TableCell({ children: [new Paragraph((publicationIndex++).toString())] }),
-                  new TableCell({ children: [new Paragraph(pub.title || 'N/A')] }),
+                  new TableCell({ children: [new Paragraph(pub?.title || 'N/A')] }),
                   new TableCell({ children: [new Paragraph("Печатный")] }),
                   new TableCell({ children: [new Paragraph(pub.output || 'N/A')] }),
                   new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : 'N/A')] }),

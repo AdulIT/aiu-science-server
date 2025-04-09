@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const publicationSchema = new mongoose.Schema({
   iin: {
@@ -6,7 +6,7 @@ const publicationSchema = new mongoose.Schema({
     required: true,
   },
   authors: {
-    type: [String],
+    type: String,
     required: true,
   },
   title: {
@@ -40,17 +40,17 @@ const publicationSchema = new mongoose.Schema({
   publicationType: {
     type: String,
     enum: [
-      'scopus_wos',   // Научные труды (Scopus/Web of Science)
-      'koknvo',       // КОКНВО
-      'conference',   // Материалы конференций
-      'articles',     // Статьи РК и не включенные в Scopus/WoS
-      'books',        // Монографии, книги и учебные материалы
-      'patents'       // Патенты, авторское свидетельство, полезная модель
+      "scopus_wos", // Научные труды (Scopus/Web of Science)
+      "koknvo", // КОКНВО
+      "conference", // Материалы конференций
+      "articles", // Статьи РК и не включенные в Scopus/WoS
+      "books", // Монографии, книги и учебные материалы
+      "patents", // Патенты, авторское свидетельство, полезная модель
     ],
     required: true,
   },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
-const Publication = mongoose.model('Publication', publicationSchema);
+const Publication = mongoose.model("Publication", publicationSchema);
 module.exports = Publication;
