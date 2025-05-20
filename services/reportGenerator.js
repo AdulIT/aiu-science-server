@@ -96,88 +96,114 @@ function createMainTable(groupedTypes) {
   return new Table({ rows });
 }
 
-async function generateAllPublicationsReport(publicationsByUser) {
-  const totalPublications = Object.values(publicationsByUser).reduce((acc, user) => acc + user.publications.length, 0);
-
-  const typeStats = {};
-  const schoolStats = {};
-
-  Object.values(publicationsByUser).forEach((userData) => {
-    const { publications, user } = userData;
-
-    publications.filter(pub => !!pub.publicationType).forEach((pub) => {
-      if (!typeStats[pub.publicationType]) {
-        typeStats[pub.publicationType] = 0
-      };
-      typeStats[pub.publicationType] += 1;
-    });
-
-    if (!schoolStats[user.higherSchool]) schoolStats[user.higherSchool] = {};
-    publications.forEach((pub) => {
-      if (!schoolStats[user.higherSchool][pub.publicationType]) schoolStats[user.higherSchool][pub.publicationType] = 0;
-      schoolStats[user.higherSchool][pub.publicationType] += 1;
-    });
+async function generateAllPublicationsReport(publicationsByUser, higherSchool = 'all') {
+  // Группируем пользователей по школам
+  const schools = {};
+  Object.values(publicationsByUser).forEach(({ user, publications }) => {
+    if (!user.higherSchool) return;
+    if (!schools[user.higherSchool]) schools[user.higherSchool] = [];
+    schools[user.higherSchool].push({ user, publications });
   });
-  
-  const typeStatsParagraphs = Object.entries(typeStats).map(([type, count]) => 
-    {
-      return new Paragraph({
-      text: `${getTypeTitle(type)}: ${count}`,
-      alignment: AlignmentType.LEFT,
-    })}
-  );
 
-  const schoolStatsParagraphs = [];
-  Object.entries(schoolStats).forEach(([school, types]) => {
-    schoolStatsParagraphs.push(new Paragraph({
-      text: `Статистика для ${school}:`,
-      alignment: AlignmentType.LEFT,
-    }));
+  let docSections = [];
+  let totalPublications = 0;
 
-    Object.entries(types).forEach(([type, count]) => {
-      schoolStatsParagraphs.push(new Paragraph({
-        text: `- ${getTypeTitle(type)}: ${count}`,
-        alignment: AlignmentType.LEFT,
-      }));
+  if (higherSchool && higherSchool !== 'all') {
+    // Только одна школа
+    const schoolUsers = schools[higherSchool] || [];
+    let allPubs = [];
+    schoolUsers.forEach(({ publications }) => {
+      allPubs = allPubs.concat(publications);
     });
-  });
-// console.log(publicationsByUser)
-  const doc = new Document({
-    sections: [
-      {
-        children: [
+    totalPublications = allPubs.length;
+    const groupedTypes = groupByType(allPubs);
+
+    docSections = [
           new Paragraph({
-            text: "Международный университет Астана",
+        text: `Международный университет Астана`,
             heading: HeadingLevel.HEADING_1,
             alignment: AlignmentType.CENTER,
           }),
           new Paragraph({
-            text: `Отчет по публикациям всех сотрудников за ${new Date().getFullYear()}`,
+        text: `Отчет по публикациям сотрудников школы: ${higherSchool} за ${new Date().getFullYear()}`,
             alignment: AlignmentType.CENTER,
           }),
           new Paragraph({
             text: `Общее количество публикаций: ${totalPublications}`,
             alignment: AlignmentType.LEFT,
             spacing: { after: 300 },
-          }),
+      })
+    ];
+
+    // Для каждого типа публикаций — отдельная таблица
+    Object.entries(groupedTypes).forEach(([type, pubs]) => {
+      if (pubs.length > 0) {
+        docSections.push(
           new Paragraph({
-            text: "Статистика по типам публикаций:",
+            text: getTypeTitle(type),
             heading: HeadingLevel.HEADING_2,
+            spacing: { before: 200 },
           }),
-          ...typeStatsParagraphs,
+          createAdminTable(pubs)
+        );
+      }
+    });
+  } else {
+    // Для всех школ
+    docSections = [
+      new Paragraph({
+        text: `Международный университет Астана`,
+        heading: HeadingLevel.HEADING_1,
+        alignment: AlignmentType.CENTER,
+      }),
+      new Paragraph({
+        text: `Отчет по публикациям всех сотрудников за ${new Date().getFullYear()}`,
+        alignment: AlignmentType.CENTER,
+      })
+    ];
+    Object.entries(schools).forEach(([school, usersArr]) => {
+      let allPubs = [];
+      usersArr.forEach(({ publications }) => {
+        allPubs = allPubs.concat(publications);
+      });
+      totalPublications += allPubs.length;
+      const groupedTypes = groupByType(allPubs);
+      docSections.push(
           new Paragraph({
-            text: "Статистика по высшим школам:",
+          text: `\nШкола: ${school}`,
             heading: HeadingLevel.HEADING_2,
             spacing: { before: 300 },
           }),
-          ...schoolStatsParagraphs,
+        new Paragraph({
+          text: `Количество публикаций: ${allPubs.length}`,
+          alignment: AlignmentType.LEFT,
+        })
+      );
+      Object.entries(groupedTypes).forEach(([type, pubs]) => {
+        if (pubs.length > 0) {
+          docSections.push(
           new Paragraph({
-            text: "Список всех публикаций:",
-            heading: HeadingLevel.HEADING_2,
-            spacing: { before: 300 },
+              text: getTypeTitle(type),
+              heading: HeadingLevel.HEADING_3,
+              spacing: { before: 200 },
           }),
-          createMainTable(publicationsByUser),
-        ],
+            createAdminTable(pubs)
+          );
+        }
+      });
+    });
+    // В начало — общее количество публикаций
+    docSections.splice(2, 0, new Paragraph({
+      text: `Общее количество публикаций: ${totalPublications}`,
+      alignment: AlignmentType.LEFT,
+      spacing: { after: 300 },
+    }));
+  }
+
+  const doc = new Document({
+    sections: [
+      {
+        children: docSections,
       },
     ],
   });
@@ -187,11 +213,9 @@ async function generateAllPublicationsReport(publicationsByUser) {
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir);
     }
-
+    const filePath = path.join(reportsDir, `all_publications_${higherSchool}_${new Date().getFullYear()}.docx`);
     const buffer = await Packer.toBuffer(doc);
-    const filePath = path.join(reportsDir, `all_publications_${new Date().getFullYear()}.docx`);
     fs.writeFileSync(filePath, buffer);
-
     return filePath;
   } catch (error) {
     console.error("Error while packing document: ", error);
@@ -199,85 +223,38 @@ async function generateAllPublicationsReport(publicationsByUser) {
   }
 }
 
-function createMainTable(groupedTypes) {
+function createAdminTable(pubs) {
     const rows = [];
-    let publicationIndex = 1;
-    console.log(2)
-  
-    // Check if there are any publications across all types
-
-    const hasPublications = Object.values(groupedTypes).some(pubs => Array.isArray(pubs.publications) && pubs.publications.length > 0);
-    if (!hasPublications) {
-      // Add a fallback row if no publications exist
+  // Заголовок таблицы
       rows.push(
         new TableRow({
           children: [
-            new TableCell({
-              children: [new Paragraph({ text: "Нет публикаций для отображения", alignment: AlignmentType.CENTER })],
-              columnSpan: 6,
-            }),
+        new TableCell({ children: [new Paragraph('№')], verticalAlign: 'center' }),
+        new TableCell({ children: [new Paragraph('Название трудов')], verticalAlign: 'center' }),
+        new TableCell({ children: [new Paragraph('Характер работы')], verticalAlign: 'center' }),
+        new TableCell({ children: [new Paragraph('Выходные данные')], verticalAlign: 'center' }),
+        new TableCell({ children: [new Paragraph('Объем п.л.')], verticalAlign: 'center' }),
+        new TableCell({ children: [new Paragraph('Фамилии авторов')], verticalAlign: 'center' }),
+        new TableCell({ children: [new Paragraph('Пользователь')], verticalAlign: 'center' }),
           ],
         })
       );
-    } else {
-      const groupByType = {}
-      const allPubs = Object.entries(groupedTypes).map(([key, value]) => value.publications).flat()
-      allPubs.forEach((pub) => {
-        if (!groupByType[pub.publicationType]) {
-          groupByType[pub.publicationType] = []
-        };
-        groupByType[pub.publicationType].push(pub)
-      })
-      rows.push(
-        new TableRow({
-      
-          children: 
-          ['№', 'Название трудов', 'Характер работы','Выходные данные','Объем п.л.','Фамилии авторов'].map((title) => 
-          new TableCell({
-              children: [new Paragraph({ text: title, alignment: AlignmentType.CENTER, italics: true })],
-            }),
-          )
-        })
-      )
-      Object.entries(groupByType).sort(a => a[0] === undefined ? 1 : -1).forEach(([type, pubs]) => {
-        if (Array.isArray(pubs) && pubs.length > 0) {
-
-          rows.push(
-            new TableRow({
-          
-              children: 
-              [new TableCell({
-                children: [new Paragraph({ text: getTypeTitle(type), alignment: AlignmentType.CENTER, italics: true })],
-                columnSpan: 6
-              })]
-              
-              
-            })
-          )
-          
-  
-          pubs.forEach((pub) => {
+  // Данные публикаций
+  pubs.forEach((pub, idx) => {
             rows.push(
               new TableRow({
                 children: [
-                  new TableCell({ children: [new Paragraph((publicationIndex++).toString())] }),
-                  new TableCell({ children: [new Paragraph(pub?.title || 'N/A')] }),
-                  new TableCell({ children: [new Paragraph("Печатный")] }),
-                  new TableCell({ children: [new Paragraph(pub.output || 'N/A')] }),
-                  new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : 'N/A')] }),
-                  new TableCell({
-                    children: [new Paragraph(
-                      Array.isArray(pub.authors) ? pub.authors.join(', ') : (pub.authors || 'N/A')
-                    )]
-                  }),
+          new TableCell({ children: [new Paragraph((idx + 1).toString())] }),
+          new TableCell({ children: [new Paragraph(pub.title || '')] }),
+          new TableCell({ children: [new Paragraph(pub.character || 'Печатный')] }),
+          new TableCell({ children: [new Paragraph(pub.output || '')] }),
+          new TableCell({ children: [new Paragraph(pub.volume ? pub.volume.toString() : '')] }),
+          new TableCell({ children: [new Paragraph(pub.authors || '')] }),
+          new TableCell({ children: [new Paragraph(pub.iin || '')] }), // Можно заменить на ФИО, если нужно
                 ],
               })
             );
           });
-        }
-      });
-    }
-  
     return new Table({ rows });
   }
 
