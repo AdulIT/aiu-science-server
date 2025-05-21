@@ -18,8 +18,14 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const { higherSchool = 'all' } = req.body;
     const publicationsByUser = {};
-    const users = await User.find({});
+    let users;
+    if (higherSchool && higherSchool !== 'all') {
+      users = await User.find({ higherSchool });
+    } else {
+      users = await User.find({});
+    }
   
     for (const user of users) {
       publicationsByUser[user.iin] = {
@@ -28,11 +34,12 @@ module.exports = async function handler(req, res) {
       };
     }
 
-    const filePath = await generateAllPublicationsReport(publicationsByUser);
+    const filePath = await generateAllPublicationsReport(publicationsByUser, higherSchool);
 
     if (fs.existsSync(filePath)) {
+      const safeSchool = encodeURIComponent(higherSchool || 'school');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', `attachment; filename=all_publications_${new Date().getFullYear()}.docx`);
+      res.setHeader('Content-Disposition', `attachment; filename=all_publications_${safeSchool}_${new Date().getFullYear()}.docx`);
       
       res.download(filePath, (err) => {
         if (err) {
