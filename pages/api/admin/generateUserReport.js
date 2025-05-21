@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const publications = await Publication.find({ iin });
+    const publications = await Publication.find({ iin: user.iin });
     if (publications.length === 0) {
       return res.status(404).json({ message: 'No publications found for this user' });
     }
