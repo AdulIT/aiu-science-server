@@ -111,4 +111,63 @@ router.post("/upload", verifyToken, authenticateUser, (req, res) => {
   });
 });
 
+// PATCH для multipart/form-data (с файлом)
+router.patch("/upload/:id", verifyToken, authenticateUser, (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  console.log('PATCH endpoint called, content-type:', contentType);
+  if (contentType.includes('multipart/form-data')) {
+    upload(req, res, async (err) => {
+      if (err) {
+        console.error("Ошибка загрузки файла:", err.message);
+        return res.status(400).json({ message: err.message });
+      }
+      try {
+        const { id } = req.params;
+        console.log('PATCH req.body:', req.body);
+        console.log('PATCH req.files:', req.files);
+        const updateData = {};
+        for (const key in req.body) {
+          updateData[key] = Array.isArray(req.body[key]) ? req.body[key][0] : req.body[key];
+        }
+        if (req.files && req.files["file"]) {
+          updateData.file = `public/uploads/publications/${req.files["file"][0].filename}`;
+        }
+        if (typeof updateData.scopus !== 'undefined') updateData.scopus = updateData.scopus === 'true' || updateData.scopus === true;
+        if (typeof updateData.wos !== 'undefined') updateData.wos = updateData.wos === 'true' || updateData.wos === true;
+        console.log('PATCH updateData:', updateData);
+        const updated = await Publication.findByIdAndUpdate(id, updateData, { new: true });
+        if (!updated) {
+          return res.status(404).json({ message: "Публикация не найдена" });
+        }
+        res.json(updated);
+      } catch (error) {
+        console.error("Ошибка при обновлении публикации:", error);
+        res.status(500).json({ message: "Ошибка при обновлении публикации" });
+      }
+    });
+  } else {
+    next();
+  }
+});
+
+// PATCH для application/json (без файла)
+router.patch("/upload/:id", verifyToken, authenticateUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('PATCH (json) req.body:', req.body);
+    const updateData = req.body;
+    if (typeof updateData.scopus !== 'undefined') updateData.scopus = updateData.scopus === 'true' || updateData.scopus === true;
+    if (typeof updateData.wos !== 'undefined') updateData.wos = updateData.wos === 'true' || updateData.wos === true;
+    console.log('PATCH (json) updateData:', updateData);
+    const updated = await Publication.findByIdAndUpdate(id, updateData, { new: true });
+    if (!updated) {
+      return res.status(404).json({ message: "Публикация не найдена" });
+    }
+    res.json(updated);
+  } catch (error) {
+    console.error("Ошибка при обновлении публикации (json):", error);
+    res.status(500).json({ message: "Ошибка при обновлении публикации" });
+  }
+});
+
 module.exports = router;
