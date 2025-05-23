@@ -283,7 +283,7 @@ function groupByType(publications) {
   
   function getTypeTitle(type) {
     const titles = {
-      koknvo: "Научные статьи в журналах КОКНВО",
+      koknvo: "Научные статьи в журналах КОКСНВО",
       scopus_wos: "Публикации Scopus и Web of Science",
       conference: "Публикации в материалах конференций",
       articles: "Научные статьи в периодических изданиях",
